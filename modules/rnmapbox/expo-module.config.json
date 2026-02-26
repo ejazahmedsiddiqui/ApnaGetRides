@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android", "web"],
+  "apple": {
+    "modules": ["RnmapboxModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.rnmapbox.RnmapboxModule"]
+  }
+}
