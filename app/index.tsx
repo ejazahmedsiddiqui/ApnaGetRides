@@ -1,22 +1,26 @@
-import {Text, View, StyleSheet, TouchableOpacity} from "react-native";
+import {Text, View, StyleSheet, TouchableOpacity, TextInput} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {router} from "expo-router";
+import {Calendar, Search} from "lucide-react-native";
+
+
 export default function Index() {
     console.log('This is the index page')
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>This is a text area</Text>
-                <TouchableOpacity
-                    onPress={() => {
-                        router.push('/Login');
-                    }}
-                    style={styles.loginButton}
-                >
-                    <Text style={styles.loginButtonText}>Go To Login Page</Text>
+            <View>
+                <TouchableOpacity >
+                    <Search size={24} color={'#eee'}/>
+                    <Text>Enter Your Pickup Location</Text>
+                </TouchableOpacity>
+                <TouchableOpacity>
+                    <Calendar size={24} color={'#eee'}/>
+                    <Text>Later</Text>
                 </TouchableOpacity>
             </View>
-
+            <View>
+                <Text>MAP VIEW</Text>
+            </View>
         </SafeAreaView>
     );
 }
@@ -24,34 +28,6 @@ export default function Index() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#000'
+        backgroundColor: '#1e1e1e'
     },
-    map: {
-        height: 200,
-    },
-    header: {
-        backgroundColor: '#000',
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    headerTitle: {
-        color: '#fff',
-        fontSize: 20,
-        fontWeight: '800'
-    },
-    loginButton: {
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        marginTop: 12,
-        backgroundColor: '#44a2ee',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#b9dfff',
-    },
-    loginButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
-    }
 });
