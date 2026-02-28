@@ -6,6 +6,8 @@ type InputType = 'default' | 'numeric' | 'alphabetic' | 'alphanumeric' | 'pincod
 
 interface RenderFormFieldProps {
     label?: string;
+    labelColor?: string;
+    labelColorActive?: string;
     value: string;
     onChangeText: (text: string) => void;
     placeholder?: string;
@@ -26,6 +28,8 @@ interface RenderFormFieldProps {
 
 const RenderFormField = ({
                              label,
+                             labelColor = '#fff',
+                             labelColorActive = '#5B5FED',
                              value,
                              onChangeText,
                              placeholder,
@@ -62,7 +66,7 @@ const RenderFormField = ({
         outputRange: ['#e0e0e0', '#5B5FED'],
     });
 
-    const labelColor = isFocused || value ? '#5B5FED' : '#93BD57';
+    const activeLabelColor = isFocused || value ? labelColorActive : labelColor;
 
     const handleTextChange = (text: string) => {
         let validatedText = text;
@@ -120,7 +124,7 @@ const RenderFormField = ({
             <View style={[styles.formField, style]}>
                 {label && (
                     <View style={styles.inputHeader}>
-                        <Text style={[styles.inputHeading, {color: labelColor}]}>
+                        <Text style={[styles.inputHeading, {color: activeLabelColor}]}>
                             {label}
                             {maxLength && value && (
                                 <Text style={styles.charCount}> ({value.length}/{maxLength})</Text>
