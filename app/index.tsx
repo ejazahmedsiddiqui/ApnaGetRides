@@ -1,7 +1,7 @@
 import {Text, View, StyleSheet, TouchableOpacity, TextInput} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {router} from "expo-router";
-import {Calendar, SearchAlertIcon} from "lucide-react-native";
+import {Calendar, Search} from "lucide-react-native";
 
 
 export default function Index() {
@@ -10,7 +10,7 @@ export default function Index() {
         <SafeAreaView style={styles.container}>
             <View>
                 <TouchableOpacity >
-                    <SearchAlertIcon size={24} color={'#eee'}/>
+                    <Search size={24} color={'#eee'}/>
                     <Text>Enter Your Pickup Location</Text>
                 </TouchableOpacity>
                 <TouchableOpacity>
