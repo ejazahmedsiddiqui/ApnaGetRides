@@ -1,6 +1,7 @@
 import {Stack} from "expo-router";
+import { ThemeProvider } from "react-native-zustand-theme";
 
-export default function RootLayout() {
+const App = () =>  {
     return (
         <Stack
             screenOptions={{
@@ -10,5 +11,13 @@ export default function RootLayout() {
             <Stack.Screen name={'index'} options={{title: 'Home'}}/>
             <Stack.Screen name={'(auth)'}/>
         </Stack>
+    )
+}
+
+export default function RootLayout() {
+    return (
+        <ThemeProvider>
+            <App />
+        </ThemeProvider>
     )
 }
