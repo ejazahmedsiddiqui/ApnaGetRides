@@ -2,8 +2,9 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import {Alert, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import {StatusBar} from "expo-status-bar";
 import RenderFormField from "@/components/RenderFormField";
-import {useEffect, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import {router} from "expo-router";
+import {useTheme} from "react-native-zustand-theme";
 
 const Login = () => {
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -11,6 +12,8 @@ const Login = () => {
     const [step, setStep] = useState(0);
     const [resendTimer, setResendTimer] = useState(0);
     const [errors, setErrors] = useState({phone: "", otp: ""});
+    const { theme, isDark } = useTheme();
+    const styles = useMemo(() => createStyles(theme), [theme]);
 
     useEffect(() => {
         let interval: number = 0;
@@ -52,6 +55,11 @@ const Login = () => {
         setErrors({...errors, otp: ""});
         setResendTimer(30);
     };
+
+    const isGetOtpDisabled = phoneNumber.length !== 10;
+    const isLoginDisabled = otp.length !== 6;
+    const isDisabled = step === 0 ? isGetOtpDisabled : isLoginDisabled;
+
     return (
         <>
             <StatusBar style={'light'}/>
@@ -73,7 +81,7 @@ const Login = () => {
                                     inputType={'numeric'}
                                     maxLength={10}
                                     placeholder={'Enter your 10-digit phone number'}
-                                    labelColorActive={'#9ef0ff'}
+                                    labelColorActive={isDark ? '#9ef0ff' : '#9eb1ff'}
                                 />)}
                                 {step === 1 && (<RenderFormField
                                     label={'Enter your OTP'}
@@ -82,14 +90,25 @@ const Login = () => {
                                     inputType={'numeric'}
                                     maxLength={6}
                                     placeholder={`Enter your 6-digit OTP received on ${phoneNumber}`}
-                                    labelColorActive={'#9ef0ff'}
+                                    labelColorActive={isDark ? '#9ef0ff' : '#9eb1ff'}
                                 />)}
                             </View>
                             <TouchableOpacity
-                                style={styles.loginButton}
+                                style={[
+                                    styles.loginButton,
+                                    isDisabled && styles.loginButtonDisabled
+                                ]}
                                 onPress={handleLoginButtonPress}
+                                disabled={isDisabled}
                             >
-                                <Text style={styles.loginButtonText}>{step === 0 ? 'Get OTP' : 'Login'}</Text>
+                                <Text
+                                    style={[
+                                        styles.loginButtonText,
+                                        isDisabled && styles.loginButtonTextDisabled
+                                    ]}
+                                >
+                                    {step === 0 ? 'Get OTP' : 'Login'}
+                                </Text>
                             </TouchableOpacity>
                             {step !== 0 && <View style={styles.otherOptions}>
                                 <TouchableOpacity
@@ -125,10 +144,10 @@ const Login = () => {
 
 export default Login;
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#1e1e1e'
+        backgroundColor: theme.colors.background
     },
     background: {
         flex: 1,
@@ -137,14 +156,15 @@ const styles = StyleSheet.create({
     },
     companyTitle: {
         fontSize: 24,
-        color: '#cacaca',
+        color: theme.colors.textSecondary,
         fontWeight: 'semibold'
     },
     appTitle: {
         fontSize: 80,
-        color: '#fff',
+        color: theme.colors.textPrimary,
         fontWeight: 'bold',
     },
+
     loginContainer: {
         marginTop: '30%',
         paddingHorizontal: 20,
@@ -157,21 +177,33 @@ const styles = StyleSheet.create({
     },
     loginButton: {
         width: '100%',
-        backgroundColor: '#000',
-        paddingVertical: 12,
-        paddingHorizontal: 12,
-        borderRadius: 8,
-        borderColor: '#6c6c6c',
-        borderWidth: 1,
-        boxShadow: '2px 4px 8px rgba(0,0,0,0.3)',
+        paddingVertical: theme.spacing.md,
+        borderRadius: theme.radius.md,
+        backgroundColor: theme.colors.accent,
         justifyContent: 'center',
         alignItems: 'center',
+
+        shadowColor: theme.colors.boxShadow,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 8,
+        elevation: 4,
     },
+
+    loginButtonDisabled: {
+        backgroundColor: theme.colors.border,
+        shadowOpacity: 0,
+        elevation: 0,
+    },
+
     loginButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'semibold',
-        lineHeight: 24,
+        color: theme.colors.accentText,
+        fontSize: theme.fontSize.lg,
+        fontWeight: theme.fontWeight.bold,
+    },
+
+    loginButtonTextDisabled: {
+        color: theme.colors.textMuted,
     },
     otherOptions: {
         width: '100%',
@@ -190,8 +222,8 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#3998ff',
     },
-
     resendDisabled: {
-        color: '#ccc',
+        color: theme.colors.textSecondary,
     },
+
 })
