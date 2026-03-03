@@ -1,7 +1,9 @@
 import {Stack} from "expo-router";
 import { ThemeProvider } from "react-native-zustand-theme";
+import Mapbox from "@rnmapbox/maps";
 
 const App = () =>  {
+    Mapbox.setTelemetryEnabled(false);
     return (
         <Stack
             screenOptions={{
@@ -10,6 +12,7 @@ const App = () =>  {
         >
             <Stack.Screen name={'index'} options={{title: 'Home'}}/>
             <Stack.Screen name={'(auth)'}/>
+            <Stack.Screen name={'(map)'}/>
         </Stack>
     )
 }
