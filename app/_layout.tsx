@@ -13,6 +13,7 @@ const App = () =>  {
             <Stack.Screen name={'index'} options={{title: 'Home'}}/>
             <Stack.Screen name={'(auth)'}/>
             <Stack.Screen name={'(map)'}/>
+            <Stack.Screen name={'(profile)'}/>
         </Stack>
     )
 }

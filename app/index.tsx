@@ -23,7 +23,7 @@ export default function Index() {
                 {/* Floating Search Card */}
                 <View style={styles.searchCard}>
                     <TouchableOpacity style={styles.searchRow}
-                    onPress={() => router.push('/SearchPage')}>
+                                      onPress={() => router.push('/SearchPage')}>
                         <Search size={20} color={theme.colors.textSecondary}/>
                         <Text style={styles.searchText}>
                             Enter pickup location
@@ -58,6 +58,11 @@ export default function Index() {
                     onPress={() => router.push('/Login')}
                     style={styles.loginButton}>
                     <Text style={styles.loginButtonText}>Login</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    onPress={() => router.push('/Profile')}
+                    style={styles.loginButton}>
+                    <Text style={styles.loginButtonText}>Profile Section</Text>
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
@@ -146,5 +151,9 @@ const createStyles = (theme: any) =>
             marginVertical: theme.spacing.xl,
             alignSelf: 'center',
             borderRadius: theme.radius.sm
-        }, loginButtonText: {color: theme.colors.accentText,}
+        },
+        loginButtonText: {
+            color: theme.colors.accentText,
+            fontSize: theme.fontSize.xl,
+        }
     });
