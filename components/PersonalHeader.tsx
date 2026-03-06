@@ -1,6 +1,8 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useTheme } from "react-native-zustand-theme";
-import { useMemo } from "react";
+import {StyleSheet, Text, TouchableOpacity, View} from "react-native";
+import {useTheme} from "react-native-zustand-theme";
+import {useMemo} from "react";
+import {router} from "expo-router";
+import {ChevronLeft} from "lucide-react-native";
 
 type Tab = "details" | "security";
 
@@ -9,13 +11,27 @@ interface ProfileHeaderProps {
     onTabChange: (tab: Tab) => void;
 }
 
-const ProfileHeader = ({ activeTab, onTabChange }: ProfileHeaderProps) => {
-    const { theme } = useTheme();
+const ProfileHeader = ({activeTab, onTabChange}: ProfileHeaderProps) => {
+    const {theme} = useTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
-
     return (
         <View style={styles.wrapper}>
-            <Text style={styles.title}>My Account</Text>
+            <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                paddingVertical: 12,
+            }}>
+                <TouchableOpacity
+                    style={{
+                    }}
+                    onPress={() => router.back()}>
+                    <ChevronLeft size={22} color={theme.colors.textPrimary} style={{
+                        marginLeft: '4%',
+                    }}/>
+                </TouchableOpacity>
+                <Text style={styles.title}>My Account</Text>
+            </View>
             <View style={styles.tabBar}>
                 <TouchableOpacity
                     style={[styles.tab, activeTab === "details" && styles.tabActive]}
@@ -45,21 +61,19 @@ export default ProfileHeader;
 const createStyles = (theme: any) =>
     StyleSheet.create({
         wrapper: {
+            height: '12%',
             backgroundColor: theme.colors.background,
-            paddingTop: 12,
-            paddingBottom: 0,
             borderBottomWidth: 1,
             borderBottomColor: theme.colors.border
         },
         title: {
             fontSize: 22,
-            marginLeft: '4%',
             fontWeight: "700",
             color: theme.colors.textPrimary,
-            marginBottom: 16,
             letterSpacing: -0.4,
         },
         tabBar: {
+            flex: 1,
             flexDirection: "row",
             gap: 4,
         },

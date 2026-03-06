@@ -8,19 +8,15 @@ import {
 } from "react-native";
 import { useTheme } from "react-native-zustand-theme";
 import { useMemo } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
-import ProfileHeader from './PersonalHeader';
 import {Pen} from "lucide-react-native";
-
-// Replace with your actual navigation / state management approach
-interface PersonalDetailsProps {
-    activeTab: "details" | "security";
-    onTabChange: (tab: "details" | "security") => void;
-}
+import Animated, {
+     SlideInRight,
+     SlideOutLeft,
+} from 'react-native-reanimated';
 
 const USER = {
     name: "Jordan Avery",
-    gender: "Non-binary",
+    gender: "Female",
     email: "jordan.avery@example.com",
     phone: "+1 (555) 012-3456",
     avatarUri: "https://i.pravatar.cc/200?img=47",
@@ -51,11 +47,18 @@ const Field = ({
 );
 
 const PersonalDetails = () => {
-    const { theme, toggleMode } = useTheme();
+    const { theme } = useTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
-
     return (
-        <View style={styles.safeArea}>
+        <View
+            style={styles.safeArea}
+        >
+        <Animated.View
+            key="details"
+            style={{ flex: 1, overflow: 'hidden' }}
+            entering={SlideInRight.duration(300)}
+            exiting={SlideOutLeft.duration(300)}
+        >
             <ScrollView
                 style={styles.scroll}
                 contentContainerStyle={styles.content}
@@ -113,13 +116,13 @@ const PersonalDetails = () => {
                     />
                 </View>
             </ScrollView>
+        </Animated.View>
         </View>
     );
 };
 
 export default PersonalDetails;
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const createStyles = (theme: any) =>
     StyleSheet.create({
         safeArea: {

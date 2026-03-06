@@ -1,5 +1,4 @@
 import {
-    Animated,
     ScrollView,
     StyleSheet,
     Switch,
@@ -7,21 +6,22 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import { useTheme } from "react-native-zustand-theme";
-import { useCallback, useMemo, useRef, useState } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
-import ProfileHeader from './PersonalHeader'
+import {useTheme} from "react-native-zustand-theme";
+import React, {useCallback, useMemo, useState} from "react";
+import Animated, {
+    BounceIn,
+    BounceOut,
+    useSharedValue,
+    withSpring,
+    interpolate,
+    useAnimatedStyle,
+    SlideInDown, SlideOutDown, SlideOutLeft, SlideInRight
+} from 'react-native-reanimated';
 
-interface PersonalSecurityProps {
-    activeTab: "details" | "security";
-    onTabChange: (tab: "details" | "security") => void;
-}
-
-// ─── Dummy data ───────────────────────────────────────────────────────────────
 const DEVICES = [
-    { id: "1", name: "iPhone 15 Pro", location: "New York, US", lastActive: "Now", current: true },
-    { id: "2", name: "MacBook Pro", location: "New York, US", lastActive: "2h ago", current: false },
-    { id: "3", name: "iPad Air", location: "Chicago, US", lastActive: "3 days ago", current: false },
+    {id: "1", name: "iPhone 15 Pro", location: "New York, US", lastActive: "Now", current: true},
+    {id: "2", name: "MacBook Pro", location: "New York, US", lastActive: "2h ago", current: false},
+    {id: "3", name: "iPad Air", location: "Chicago, US", lastActive: "3 days ago", current: false},
 ];
 
 const CURRENT_DEVICE = {
@@ -82,23 +82,40 @@ const Row = ({
     </TouchableOpacity>
 );
 
-const Separator = ({ styles }: { styles: ReturnType<typeof createStyles> }) => (
-    <View style={styles.separator} />
+const Separator = ({styles}: { styles: ReturnType<typeof createStyles> }) => (
+    <View style={styles.separator}/>
 );
 
 // ─── 2FA Expandable panel ─────────────────────────────────────────────────────
-const TwoFAPanel = ({ styles, theme }: { styles: ReturnType<typeof createStyles>; theme: any }) => {
+const TwoFAPanel = ({
+                        styles,
+                        theme,
+                    }: {
+    styles: ReturnType<typeof createStyles>;
+    theme: any;
+}) => {
     const [expanded, setExpanded] = useState(false);
     const [enabled, setEnabled] = useState(false);
-    const anim = useRef(new Animated.Value(0)).current;
+
+    const progress = useSharedValue(0);
 
     const toggle = useCallback(() => {
-        const toValue = expanded ? 0 : 1;
-        setExpanded(!expanded);
-        Animated.spring(anim, { toValue, useNativeDriver: false, speed: 14, bounciness: 4 }).start();
-    }, [expanded]);
+        const next = !expanded;
+        setExpanded(next);
 
-    const panelHeight = anim.interpolate({ inputRange: [0, 1], outputRange: [0, 130] });
+        progress.value = withSpring(next ? 1 : 0, {
+            stiffness: 140,
+        });
+    }, [expanded, progress]);
+
+    const animatedPanelStyle = useAnimatedStyle(() => {
+        const height = interpolate(progress.value, [0, 1], [0, 130]);
+
+        return {
+            height,
+            overflow: "hidden",
+        };
+    });
 
     return (
         <>
@@ -107,20 +124,28 @@ const TwoFAPanel = ({ styles, theme }: { styles: ReturnType<typeof createStyles>
                 label="Two-Factor Authentication"
                 sub={enabled ? "Enabled · SMS" : "Not enabled"}
                 right={
-                    <TouchableOpacity onPress={toggle} style={styles.expandBtn} activeOpacity={0.7}>
+                    <TouchableOpacity
+                        onPress={toggle}
+                        style={styles.expandBtn}
+                        activeOpacity={0.7}
+                    >
                         <Text style={styles.expandBtnText}>{expanded ? "▲" : "▼"}</Text>
                     </TouchableOpacity>
                 }
                 onPress={toggle}
                 styles={styles}
             />
-            <Animated.View style={[styles.twoFAPanel, { height: panelHeight, overflow: "hidden" }]}>
+
+            <Animated.View style={[styles.twoFAPanel, animatedPanelStyle]}>
                 <View style={styles.twoFAInner}>
                     <View style={styles.twoFARow}>
                         <View>
                             <Text style={styles.twoFATitle}>Enable via SMS</Text>
-                            <Text style={styles.twoFASub}>Receive a code on your phone</Text>
+                            <Text style={styles.twoFASub}>
+                                Receive a code on your phone
+                            </Text>
                         </View>
+
                         <Switch
                             value={enabled}
                             onValueChange={setEnabled}
@@ -131,8 +156,14 @@ const TwoFAPanel = ({ styles, theme }: { styles: ReturnType<typeof createStyles>
                             thumbColor="#fff"
                         />
                     </View>
-                    <TouchableOpacity style={styles.authenticatorBtn} activeOpacity={0.7}>
-                        <Text style={styles.authenticatorBtnText}>🔑  Set up Authenticator App</Text>
+
+                    <TouchableOpacity
+                        style={styles.authenticatorBtn}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={styles.authenticatorBtnText}>
+                            🔑 Set up Authenticator App
+                        </Text>
                     </TouchableOpacity>
                 </View>
             </Animated.View>
@@ -142,11 +173,19 @@ const TwoFAPanel = ({ styles, theme }: { styles: ReturnType<typeof createStyles>
 
 // ─── Main component ───────────────────────────────────────────────────────────
 const PersonalSecurity = () => {
-    const { theme } = useTheme();
+    const {theme} = useTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
 
     return (
-        <View style={styles.safeArea}>
+        <Animated.View
+            key="security"
+            style={{ flex: 1, overflow: 'hidden' }}
+            entering={SlideInRight.duration(300)}
+            exiting={SlideOutLeft.duration(300)}
+        >
+        <View
+            style={styles.safeArea}
+        >
             <ScrollView
                 style={styles.scroll}
                 contentContainerStyle={styles.content}
@@ -169,7 +208,7 @@ const PersonalSecurity = () => {
                                 }
                                 styles={styles}
                             />
-                            {idx < DEVICES.length - 1 && <Separator styles={styles} />}
+                            {idx < DEVICES.length - 1 && <Separator styles={styles}/>}
                         </View>
                     ))}
                 </Section>
@@ -180,7 +219,8 @@ const PersonalSecurity = () => {
                         icon="📞"
                         label="Recovery Phone Number"
                         sub="+1 (555) ••• ••34"
-                        onPress={() => {}}
+                        onPress={() => {
+                        }}
                         right={<Text style={styles.chevron}>›</Text>}
                         styles={styles}
                     />
@@ -188,7 +228,7 @@ const PersonalSecurity = () => {
 
                 {/* ── 2FA ── */}
                 <Section title="TWO-FACTOR AUTHENTICATION" styles={styles}>
-                    <TwoFAPanel styles={styles} theme={theme} />
+                    <TwoFAPanel styles={styles} theme={theme}/>
                 </Section>
 
                 {/* ── Current device ── */}
@@ -204,7 +244,7 @@ const PersonalSecurity = () => {
                                 <Text style={styles.infoLabel}>{label}</Text>
                                 <Text style={styles.infoValue}>{value}</Text>
                             </View>
-                            {idx < arr.length - 1 && <Separator styles={styles} />}
+                            {idx < arr.length - 1 && <Separator styles={styles}/>}
                         </View>
                     ))}
                 </Section>
@@ -214,21 +254,24 @@ const PersonalSecurity = () => {
                     <Row
                         icon="🔓"
                         label="Sign Out of All Devices"
-                        onPress={() => {}}
+                        onPress={() => {
+                        }}
                         styles={styles}
                         danger
                     />
-                    <Separator styles={styles} />
+                    <Separator styles={styles}/>
                     <Row
                         icon="🗑️"
                         label="Delete Account"
-                        onPress={() => {}}
+                        onPress={() => {
+                        }}
                         styles={styles}
                         danger
                     />
                 </Section>
             </ScrollView>
         </View>
+        </Animated.View>
     );
 };
 
@@ -241,10 +284,10 @@ const createStyles = (theme: any) =>
             flex: 1,
             backgroundColor: theme.colors.surface,
         },
-        scroll: { flex: 1 },
-        content: { paddingBottom: 48 },
+        scroll: {flex: 1},
+        content: {paddingBottom: 48},
 
-        section: { marginTop: 20, paddingHorizontal: 16 },
+        section: {marginTop: 20, paddingHorizontal: 16},
         sectionLabel: {
             fontSize: 11,
             fontWeight: "700",
@@ -275,14 +318,14 @@ const createStyles = (theme: any) =>
             justifyContent: "center",
             marginRight: 12,
         },
-        rowEmoji: { fontSize: 17 },
-        rowBody: { flex: 1 },
+        rowEmoji: {fontSize: 17},
+        rowBody: {flex: 1},
         rowLabel: {
             fontSize: 15,
             fontWeight: "500",
             color: theme.colors.textPrimary,
         },
-        rowLabelDanger: { color: "#EF4444" },
+        rowLabelDanger: {color: "#EF4444"},
         rowSub: {
             fontSize: 12,
             color: theme.colors.textSecondary ?? "#9CA3AF",
@@ -313,7 +356,7 @@ const createStyles = (theme: any) =>
         },
 
         // Expand button
-        expandBtn: { padding: 6 },
+        expandBtn: {padding: 6},
         expandBtnText: {
             fontSize: 12,
             color: theme.colors.textSecondary ?? "#9CA3AF",
