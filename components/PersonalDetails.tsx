@@ -6,13 +6,23 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import { useTheme } from "react-native-zustand-theme";
-import { useMemo } from "react";
+import {useTheme} from "react-native-zustand-theme";
+import {useMemo} from "react";
 import {Pen} from "lucide-react-native";
 import Animated, {
-     SlideInRight,
-     SlideOutLeft,
+ SlideInLeft, SlideOutRight
 } from 'react-native-reanimated';
+import {router} from "expo-router";
+import {GestureDetector, Gesture} from 'react-native-gesture-handler'
+import {scheduleOnRN} from 'react-native-worklets';
+import {useUser} from "@/context/UserContext";
+
+type Tab = "details" | "security";
+
+interface ProfileHeaderProps {
+    activeTab: Tab;
+    onTabChange: (tab: Tab) => void;
+}
 
 const USER = {
     name: "Jordan Avery",
@@ -26,97 +36,114 @@ const Field = ({
                    label,
                    value,
                    styles,
-                   onEdit,
                }: {
     label: string;
     value: string;
     styles: ReturnType<typeof createStyles>;
-    onEdit?: () => void;
+
 }) => (
     <View style={styles.fieldRow}>
         <View style={styles.fieldLeft}>
             <Text style={styles.fieldLabel}>{label}</Text>
             <Text style={styles.fieldValue}>{value}</Text>
         </View>
-        {onEdit && (
-            <TouchableOpacity onPress={onEdit} activeOpacity={0.6} style={styles.editBtn}>
-                <Text style={styles.editBtnText}>Edit</Text>
-            </TouchableOpacity>
-        )}
+
     </View>
 );
 
-const PersonalDetails = () => {
-    const { theme } = useTheme();
+const PersonalDetails = ({activeTab, onTabChange}: ProfileHeaderProps) => {
+    const {theme} = useTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
+    const {profilePicture, fullName, email, gender, phone} = useUser();
+
+    const swipeGesture = Gesture.Pan()
+        .onEnd((event) => {
+            if (event.translationX < -50 && activeTab === 'details') {
+                scheduleOnRN(onTabChange, 'security')
+            }
+        })
+
     return (
         <View
             style={styles.safeArea}
         >
-        <Animated.View
-            key="details"
-            style={{ flex: 1, overflow: 'hidden' }}
-            entering={SlideInRight.duration(300)}
-            exiting={SlideOutLeft.duration(300)}
-        >
-            <ScrollView
-                style={styles.scroll}
-                contentContainerStyle={styles.content}
-                showsVerticalScrollIndicator={false}
-            >
-                {/* Avatar section */}
-                <View style={styles.avatarSection}>
-                    <View style={styles.avatarWrapper}>
-                        <Image source={{ uri: USER.avatarUri }} style={styles.avatar} />
-                        <TouchableOpacity style={styles.avatarBadge} activeOpacity={0.7}>
-                            <Pen size={20} color={theme.colors.textPrimary} style={{
-                                transform: [
-                                    {rotate: '270deg'}
-                                ]
-                            }}/>
-                        </TouchableOpacity>
-                    </View>
-                    <Text style={styles.avatarName}>{USER.name}</Text>
-                    <Text style={styles.avatarSub}>Tap the icon to change your photo</Text>
-                </View>
+            <GestureDetector gesture={swipeGesture}>
+                <Animated.View
+                    key="details"
+                    style={{flex: 1, overflow: 'hidden'}}
+                    entering={SlideInLeft.duration(300)}
+                    exiting={SlideOutRight.duration(300)}
+                >
+                    <ScrollView
+                        style={styles.scroll}
+                        contentContainerStyle={styles.content}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        {/* Avatar section */}
+                        <View style={styles.avatarSection}>
+                            <View style={styles.avatarWrapper}>
+                                <Image source={{uri: USER.avatarUri}} style={styles.avatar}/>
+                                <TouchableOpacity style={styles.avatarBadge} activeOpacity={0.7}>
+                                    <Pen size={20} color={theme.colors.textPrimary} style={{
+                                        transform: [
+                                            {rotate: '270deg'}
+                                        ]
+                                    }}/>
+                                </TouchableOpacity>
+                            </View>
+                            <Text style={styles.avatarName}>{USER.name}</Text>
+                            <Text style={styles.avatarSub}>Tap the icon to change your photo</Text>
+                        </View>
 
-                {/* Divider */}
-                <View style={styles.divider} />
+                        {/* Fields */}
+                        <View style={styles.card}>
+                            <View
+                             style={{
+                                 justifyContent: 'space-between',
+                                 alignItems: 'center',
+                                 flexDirection: 'row'
+                             }}
+                            >
 
-                {/* Fields */}
-                <View style={styles.card}>
-                    <Text style={styles.sectionLabel}>PROFILE INFO</Text>
+                            <Text style={styles.sectionLabel}>PROFILE INFO</Text>
+                            <TouchableOpacity onPress={() => router.push({
+                                pathname: '/ProfileEdit',
+                                params: USER
+                            })} activeOpacity={0.6} style={styles.editBtn}>
+                                <Text style={styles.editBtnText}>Edit</Text>
+                            </TouchableOpacity>
+                            </View>
+                            <Field
+                                label="Full Name"
+                                value={USER.name}
+                                styles={styles}
 
-                    <Field
-                        label="Full Name"
-                        value={USER.name}
-                        styles={styles}
-                        onEdit={() => {}}
-                    />
-                    <View style={styles.separator} />
-                    <Field
-                        label="Gender"
-                        value={USER.gender}
-                        styles={styles}
-                        onEdit={() => {}}
-                    />
-                    <View style={styles.separator} />
-                    <Field
-                        label="Email Address"
-                        value={USER.email}
-                        styles={styles}
-                        onEdit={() => {}}
-                    />
-                    <View style={styles.separator} />
-                    <Field
-                        label="Phone Number"
-                        value={USER.phone}
-                        styles={styles}
-                        onEdit={() => {}}
-                    />
-                </View>
-            </ScrollView>
-        </Animated.View>
+                            />
+                            <View style={styles.separator}/>
+                            <Field
+                                label="Gender"
+                                value={USER.gender}
+                                styles={styles}
+
+                            />
+                            <View style={styles.separator}/>
+                            <Field
+                                label="Email Address"
+                                value={USER.email}
+                                styles={styles}
+
+                            />
+                            <View style={styles.separator}/>
+                            <Field
+                                label="Phone Number"
+                                value={USER.phone}
+                                styles={styles}
+
+                            />
+                        </View>
+                    </ScrollView>
+                </Animated.View>
+            </GestureDetector>
         </View>
     );
 };
@@ -181,11 +208,6 @@ const createStyles = (theme: any) =>
             color: theme.colors.textSecondary
         },
 
-        divider: {
-            height: 8,
-            backgroundColor: theme.colors.surface
-        },
-
         // Card / fields
         card: {
             backgroundColor: theme.colors.card,
@@ -197,7 +219,6 @@ const createStyles = (theme: any) =>
             fontWeight: "700",
             letterSpacing: 0.8,
             color: theme.colors.textSecondary,
-            marginBottom: 14,
         },
         fieldRow: {
             flexDirection: "row",
@@ -231,5 +252,11 @@ const createStyles = (theme: any) =>
         separator: {
             height: 1,
             backgroundColor: theme.colors.border
+        },
+        circle: {
+            height: 120,
+            width: 120,
+            backgroundColor: '#b58df1',
+            borderRadius: 500,
         },
     });

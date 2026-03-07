@@ -1,8 +1,13 @@
 import {StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import {useTheme} from "react-native-zustand-theme";
-import {useMemo} from "react";
+import {useEffect, useMemo} from "react";
 import {router} from "expo-router";
 import {ChevronLeft} from "lucide-react-native";
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withTiming,
+} from "react-native-reanimated";
 
 type Tab = "details" | "security";
 
@@ -14,6 +19,19 @@ interface ProfileHeaderProps {
 const ProfileHeader = ({activeTab, onTabChange}: ProfileHeaderProps) => {
     const {theme} = useTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
+    const tabWidth = useSharedValue(0);
+    const translateX = useSharedValue(0);
+    useEffect(() => {
+        const index = activeTab === "details" ? 0 : 1;
+        translateX.value = withTiming(index * tabWidth.value, {
+            duration: 250,
+        });
+    }, [activeTab]);
+    const animatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{translateX: translateX.value}],
+        };
+    });
     return (
         <View style={styles.wrapper}>
             <View style={{
@@ -23,8 +41,7 @@ const ProfileHeader = ({activeTab, onTabChange}: ProfileHeaderProps) => {
                 paddingVertical: 12,
             }}>
                 <TouchableOpacity
-                    style={{
-                    }}
+                    style={{}}
                     onPress={() => router.back()}>
                     <ChevronLeft size={22} color={theme.colors.textPrimary} style={{
                         marginLeft: '4%',
@@ -32,20 +49,30 @@ const ProfileHeader = ({activeTab, onTabChange}: ProfileHeaderProps) => {
                 </TouchableOpacity>
                 <Text style={styles.title}>My Account</Text>
             </View>
-            <View style={styles.tabBar}>
+            <View style={styles.tabBar}
+                  onLayout={(e) => {
+                      tabWidth.value = e.nativeEvent.layout.width / 2;
+                  }}>
+                <Animated.View
+                    style={[
+                        styles.activeIndicator,
+                        animatedStyle,
+                        {
+                            width: "50%",
+                        },
+                    ]}
+                />
                 <TouchableOpacity
-                    style={[styles.tab, activeTab === "details" && styles.tabActive]}
+                    style={styles.tab}
                     onPress={() => onTabChange("details")}
-                    activeOpacity={0.7}
                 >
                     <Text style={[styles.tabText, activeTab === "details" && styles.tabTextActive]}>
                         Personal Details
                     </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                    style={[styles.tab, activeTab === "security" && styles.tabActive]}
+                    style={styles.tab}
                     onPress={() => onTabChange("security")}
-                    activeOpacity={0.7}
                 >
                     <Text style={[styles.tabText, activeTab === "security" && styles.tabTextActive]}>
                         Security
@@ -76,6 +103,14 @@ const createStyles = (theme: any) =>
             flex: 1,
             flexDirection: "row",
             gap: 4,
+        },
+        activeIndicator: {
+            position: "absolute",
+            height: "100%",
+            backgroundColor: theme.colors.surface,
+            borderBottomWidth: 2,
+            borderBottomColor: theme.colors.invertedMuted,
+            left: 0,
         },
         tab: {
             flex: 1,

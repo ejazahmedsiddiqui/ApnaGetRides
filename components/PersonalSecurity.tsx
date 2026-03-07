@@ -9,14 +9,14 @@ import {
 import {useTheme} from "react-native-zustand-theme";
 import React, {useCallback, useMemo, useState} from "react";
 import Animated, {
-    BounceIn,
-    BounceOut,
     useSharedValue,
     withSpring,
     interpolate,
     useAnimatedStyle,
-    SlideInDown, SlideOutDown, SlideOutLeft, SlideInRight
+    SlideOutLeft, SlideInRight
 } from 'react-native-reanimated';
+import {GestureDetector, Gesture} from 'react-native-gesture-handler'
+import {scheduleOnRN} from 'react-native-worklets';
 
 const DEVICES = [
     {id: "1", name: "iPhone 15 Pro", location: "New York, US", lastActive: "Now", current: true},
@@ -30,8 +30,12 @@ const CURRENT_DEVICE = {
     ip: "192.168.1.42",
     lastLogin: "Today at 9:14 AM",
 };
+type Tab = "details" | "security";
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+interface ProfileHeaderProps {
+    activeTab: Tab;
+    onTabChange: (tab: Tab) => void;
+}
 
 const Section = ({
                      title,
@@ -85,8 +89,6 @@ const Row = ({
 const Separator = ({styles}: { styles: ReturnType<typeof createStyles> }) => (
     <View style={styles.separator}/>
 );
-
-// ─── 2FA Expandable panel ─────────────────────────────────────────────────────
 const TwoFAPanel = ({
                         styles,
                         theme,
@@ -171,108 +173,115 @@ const TwoFAPanel = ({
     );
 };
 
-// ─── Main component ───────────────────────────────────────────────────────────
-const PersonalSecurity = () => {
+const PersonalSecurity = ({activeTab, onTabChange}: ProfileHeaderProps) => {
     const {theme} = useTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
 
+    const swipeGesture = Gesture.Pan()
+        .onEnd((event) => {
+            if (event.translationX > 50 && activeTab === 'security')
+                scheduleOnRN(onTabChange, 'details')
+        })
     return (
-        <Animated.View
-            key="security"
-            style={{ flex: 1, overflow: 'hidden' }}
-            entering={SlideInRight.duration(300)}
-            exiting={SlideOutLeft.duration(300)}
-        >
         <View
             style={styles.safeArea}
         >
-            <ScrollView
-                style={styles.scroll}
-                contentContainerStyle={styles.content}
-                showsVerticalScrollIndicator={false}
-            >
-                {/* ── Login devices ── */}
-                <Section title="ACTIVE SESSIONS" styles={styles}>
-                    {DEVICES.map((device, idx) => (
-                        <View key={device.id}>
+            <GestureDetector gesture={swipeGesture}>
+                <Animated.View
+                    key="details"
+                    style={{flex: 1, overflow: 'hidden'}}
+                    entering={SlideInRight.duration(300)}
+                    exiting={SlideOutLeft.duration(300)}
+                >
+                    <ScrollView
+                        style={styles.scroll}
+                        contentContainerStyle={styles.content}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        {/* ── Login devices ── */}
+                        <Section title="ACTIVE SESSIONS" styles={styles}>
+                            {DEVICES.map((device, idx) => (
+                                <View key={device.id}>
+                                    <Row
+                                        icon={device.name.includes("iPhone") ? "📱" : device.name.includes("Mac") ? "💻" : "📟"}
+                                        label={device.name + (device.current ? "  ✦" : "")}
+                                        sub={`${device.location} · ${device.lastActive}`}
+                                        right={
+                                            !device.current ? (
+                                                <TouchableOpacity style={styles.revokeBtn} activeOpacity={0.7}>
+                                                    <Text style={styles.revokeBtnText}>Remove</Text>
+                                                </TouchableOpacity>
+                                            ) : undefined
+                                        }
+                                        styles={styles}
+                                    />
+                                    {idx < DEVICES.length - 1 && <Separator styles={styles}/>}
+                                </View>
+                            ))}
+                        </Section>
+
+                        {/* ── Recovery ── */}
+                        <Section title="ACCOUNT RECOVERY" styles={styles}>
                             <Row
-                                icon={device.name.includes("iPhone") ? "📱" : device.name.includes("Mac") ? "💻" : "📟"}
-                                label={device.name + (device.current ? "  ✦" : "")}
-                                sub={`${device.location} · ${device.lastActive}`}
-                                right={
-                                    !device.current ? (
-                                        <TouchableOpacity style={styles.revokeBtn} activeOpacity={0.7}>
-                                            <Text style={styles.revokeBtnText}>Remove</Text>
-                                        </TouchableOpacity>
-                                    ) : undefined
-                                }
+                                icon="📞"
+                                label="Recovery Phone Number"
+                                sub="+1 (555) ••• ••34"
+                                onPress={() => {
+                                }}
+                                right={<Text style={styles.chevron}>›</Text>}
                                 styles={styles}
                             />
-                            {idx < DEVICES.length - 1 && <Separator styles={styles}/>}
-                        </View>
-                    ))}
-                </Section>
+                        </Section>
 
-                {/* ── Recovery ── */}
-                <Section title="ACCOUNT RECOVERY" styles={styles}>
-                    <Row
-                        icon="📞"
-                        label="Recovery Phone Number"
-                        sub="+1 (555) ••• ••34"
-                        onPress={() => {
-                        }}
-                        right={<Text style={styles.chevron}>›</Text>}
-                        styles={styles}
-                    />
-                </Section>
+                        {/* ── 2FA ── */}
+                        <Section title="TWO-FACTOR AUTHENTICATION" styles={styles}>
+                            <TwoFAPanel styles={styles} theme={theme}/>
+                        </Section>
 
-                {/* ── 2FA ── */}
-                <Section title="TWO-FACTOR AUTHENTICATION" styles={styles}>
-                    <TwoFAPanel styles={styles} theme={theme}/>
-                </Section>
+                        {/* ── Current device ── */}
+                        <Section title="CURRENT DEVICE" styles={styles}>
+                            {Object.entries({
+                                Model: CURRENT_DEVICE.model,
+                                "Operating System": CURRENT_DEVICE.os,
+                                "IP Address": CURRENT_DEVICE.ip,
+                                "Last Login": CURRENT_DEVICE.lastLogin,
+                            }).map(([label, value], idx, arr) => (
+                                <View key={label}>
+                                    <View style={styles.infoRow}>
+                                        <Text style={styles.infoLabel}>{label}</Text>
+                                        <Text style={styles.infoValue}>{value}</Text>
+                                    </View>
+                                    {idx < arr.length - 1 && <Separator styles={styles}/>}
+                                </View>
+                            ))}
+                        </Section>
 
-                {/* ── Current device ── */}
-                <Section title="CURRENT DEVICE" styles={styles}>
-                    {Object.entries({
-                        Model: CURRENT_DEVICE.model,
-                        "Operating System": CURRENT_DEVICE.os,
-                        "IP Address": CURRENT_DEVICE.ip,
-                        "Last Login": CURRENT_DEVICE.lastLogin,
-                    }).map(([label, value], idx, arr) => (
-                        <View key={label}>
-                            <View style={styles.infoRow}>
-                                <Text style={styles.infoLabel}>{label}</Text>
-                                <Text style={styles.infoValue}>{value}</Text>
-                            </View>
-                            {idx < arr.length - 1 && <Separator styles={styles}/>}
-                        </View>
-                    ))}
-                </Section>
-
-                {/* ── Danger zone ── */}
-                <Section title="DANGER ZONE" styles={styles}>
-                    <Row
-                        icon="🔓"
-                        label="Sign Out of All Devices"
-                        onPress={() => {
-                        }}
-                        styles={styles}
-                        danger
-                    />
-                    <Separator styles={styles}/>
-                    <Row
-                        icon="🗑️"
-                        label="Delete Account"
-                        onPress={() => {
-                        }}
-                        styles={styles}
-                        danger
-                    />
-                </Section>
-            </ScrollView>
+                        {/* ── Danger zone ── */}
+                        <Section title="DANGER ZONE" styles={styles}>
+                            <Row
+                                icon="🔓"
+                                label="Sign Out of All Devices"
+                                onPress={() => {
+                                }}
+                                styles={styles}
+                                danger
+                            />
+                            <Separator styles={styles}/>
+                            <Row
+                                icon="🗑️"
+                                label="Delete Account"
+                                onPress={() => {
+                                }}
+                                styles={styles}
+                                danger
+                            />
+                        </Section>
+                    </ScrollView>
+                </Animated.View>
+            </GestureDetector>
         </View>
-        </Animated.View>
-    );
+    )
+        ;
 };
 
 export default PersonalSecurity;
