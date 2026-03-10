@@ -20,6 +20,7 @@
     "@rnmapbox/maps": "^10.2.10",
     "@stripe/stripe-react-native": "^0.50.3",
     "@tanstack/react-query": "^5.90.21",
+    "axios": "^1.13.6",
     "expo": "~54.0.33",
     "expo-constants": "~18.0.13",
     "expo-dev-client": "~6.0.20",
@@ -43,12 +44,14 @@
     "react-native": "0.81.5",
     "react-native-dotenv": "^3.4.11",
     "react-native-gesture-handler": "~2.28.0",
+    "react-native-mmkv": "^4.2.0",
+    "react-native-nitro-modules": "^0.35.0",
     "react-native-reanimated": "~4.1.1",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
     "react-native-svg": "15.12.1",
     "react-native-web": "~0.21.0",
-    "react-native-worklets": "^0.5.2",
+    "react-native-worklets": "0.5.1",
     "react-native-zustand-theme": "^1.0.0",
     "socket.io-client": "^4.8.3",
     "zustand": "^5.0.11"
@@ -57,6 +60,7 @@
     "@types/react": "~19.1.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
+    "reactotron-react-native": "^5.1.18",
     "typescript": "~5.9.2"
   },
   "private": true

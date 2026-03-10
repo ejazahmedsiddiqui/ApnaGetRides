@@ -5,14 +5,28 @@ import RenderFormField from "@/components/RenderFormField";
 import {useEffect, useMemo, useState} from "react";
 import {router} from "expo-router";
 import {useTheme} from "react-native-zustand-theme";
+import {userLoginGetOtp, userLoginVerifyOtp} from "@/api/auth";
+
+
+interface loadingState {
+    isPhone: boolean | number;
+    isOtp: boolean | number;
+    isEmail: boolean | number;
+}
 
 const Login = () => {
+    const [loading, setLoading] = useState<loadingState>({
+        isEmail: false,
+        isOtp: false,
+        isPhone: false,
+    });
     const [phoneNumber, setPhoneNumber] = useState('');
+    const [display, setDisplay] = useState("");
     const [otp, setOtp] = useState('');
     const [step, setStep] = useState(0);
     const [resendTimer, setResendTimer] = useState(0);
     const [errors, setErrors] = useState({phone: "", otp: ""});
-    const { theme, isDark } = useTheme();
+    const {theme, isDark} = useTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
 
     useEffect(() => {
@@ -24,7 +38,39 @@ const Login = () => {
         }
         return () => clearInterval(interval);
     }, [resendTimer]);
+    const getOtp = async () => {
+        if (phoneNumber.length !== 10) return;
+        setLoading((prev) => ({...(prev as loadingState), isPhone: true}));
+        try {
+            const response = await userLoginGetOtp(phoneNumber);
+            if (response.success) {
+                Alert.alert('OTP received', 'Otp received');
+                setDisplay(response.data.otp);
+                setStep(1)
+            } else Alert.alert('Error', 'An error occurred.');
+        } catch (error) {
+            console.log('@/app/auth/Login ⟼ getOtp error is' + error);
+        } finally {
+            setLoading(prev => ({...(prev as loadingState), isPhone: false}));
+        }
+    }
 
+    const verifyOtp = async () => {
+        if (otp.length !== 4) return;
+        setLoading((prev) => ({...(prev as loadingState), isOtp: true}));
+        try {
+            const response = await userLoginVerifyOtp(phoneNumber, otp);
+            if (response.success) {
+                Alert.alert('OTP verified', 'Otp verified');
+                setLoading(prev => ({...(prev as loadingState), isOtp: false}));
+                router.replace('/')
+            } else Alert.alert('Error', 'An error occurred.');
+        } catch (error) {
+            console.log('@/app/auth/Login ⟼ getOtp error is' + error);
+        } finally {
+            setLoading(prev => ({...(prev as loadingState), isOtp: false}));
+        }
+    }
     const handleLoginButtonPress = () => {
         switch (step) {
             case 0:
@@ -32,15 +78,17 @@ const Login = () => {
                     Alert.alert('Error', `Please Enter 10-digit phone number`);
                     return;
                 }
-                setStep(1);
+                getOtp()
+                    .catch((error) => console.log('@/app/auth/Login ⟼ getOtp Error is', error));
                 setResendTimer(30);
                 break;
             case 1:
-                if (otp.length !== 6) {
+                if (otp.length !== 4) {
                     Alert.alert('Error', `Please Enter 6-digit OTP`);
                     return;
                 }
-                router.push('/')
+                verifyOtp()
+                    .catch((error) => console.log('@/app/auth/Login ⟼ verifyOtp Error is', error));
                 break;
             default:
                 setStep(0);
@@ -57,86 +105,89 @@ const Login = () => {
     };
 
     const isGetOtpDisabled = phoneNumber.length !== 10;
-    const isLoginDisabled = otp.length !== 6;
+    const isLoginDisabled = otp.length !== 4;
     const isDisabled = step === 0 ? isGetOtpDisabled : isLoginDisabled;
 
     return (
         <>
             <StatusBar style={'light'}/>
             <SafeAreaView style={styles.container}>
-                    <View style={styles.background}>
-                        <View style={{
-                            marginTop: '30%',
-                            alignItems: 'center'
-                        }}>
-                            <Text style={styles.companyTitle}>Apna</Text>
-                            <Text style={styles.appTitle}>GetRide</Text>
+                <View style={styles.background}>
+                    <View style={{
+                        marginTop: '30%',
+                        alignItems: 'center'
+                    }}>
+                        <Text style={styles.companyTitle}>Apna</Text>
+                        <Text style={styles.appTitle}>GetRide</Text>
+                    </View>
+                    <View style={styles.loginContainer}>
+                        <View style={styles.formField}>
+                            {step === 0 && (<RenderFormField
+                                label={'Phone Number'}
+                                value={phoneNumber}
+                                onChangeText={setPhoneNumber}
+                                inputType={'numeric'}
+                                maxLength={10}
+                                placeholder={'Enter your 10-digit phone number'}
+                                labelColorActive={isDark ? '#9ef0ff' : '#9eb1ff'}
+                            />)}
+                            {step === 1 && loading.isPhone === false && (<RenderFormField
+                                label={'Enter your OTP'}
+                                value={otp}
+                                onChangeText={setOtp}
+                                inputType={'numeric'}
+                                maxLength={6}
+                                placeholder={`Enter your 6-digit OTP received on ${phoneNumber}`}
+                                labelColorActive={isDark ? '#9ef0ff' : '#9eb1ff'}
+                            />)}
                         </View>
-                        <View style={styles.loginContainer}>
-                            <View style={styles.formField}>
-                                {step === 0 && (<RenderFormField
-                                    label={'Phone Number'}
-                                    value={phoneNumber}
-                                    onChangeText={setPhoneNumber}
-                                    inputType={'numeric'}
-                                    maxLength={10}
-                                    placeholder={'Enter your 10-digit phone number'}
-                                    labelColorActive={isDark ? '#9ef0ff' : '#9eb1ff'}
-                                />)}
-                                {step === 1 && (<RenderFormField
-                                    label={'Enter your OTP'}
-                                    value={otp}
-                                    onChangeText={setOtp}
-                                    inputType={'numeric'}
-                                    maxLength={6}
-                                    placeholder={`Enter your 6-digit OTP received on ${phoneNumber}`}
-                                    labelColorActive={isDark ? '#9ef0ff' : '#9eb1ff'}
-                                />)}
-                            </View>
-                            <TouchableOpacity
+                        <TouchableOpacity
+                            style={[
+                                styles.loginButton,
+                                isDisabled && styles.loginButtonDisabled
+                            ]}
+                            onPress={handleLoginButtonPress}
+                            disabled={isDisabled}
+                        >
+                            <Text
                                 style={[
-                                    styles.loginButton,
-                                    isDisabled && styles.loginButtonDisabled
+                                    styles.loginButtonText,
+                                    isDisabled && styles.loginButtonTextDisabled
                                 ]}
-                                onPress={handleLoginButtonPress}
-                                disabled={isDisabled}
+                            >
+                                {step === 0 ? 'Get OTP' : 'Login'}
+                            </Text>
+                        </TouchableOpacity>
+                        {step !== 0 && <View style={styles.otherOptions}>
+                            <TouchableOpacity
+                                style={styles.subOption}
+                                onPress={() => setStep(0)}
+                            >
+                                <Text style={styles.subOptionText}>
+                                    Change Phone Number?
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={handleResendOTP}
+                                disabled={resendTimer > 0}
                             >
                                 <Text
                                     style={[
-                                        styles.loginButtonText,
-                                        isDisabled && styles.loginButtonTextDisabled
+                                        styles.resendLink,
+                                        resendTimer > 0 && styles.resendDisabled,
                                     ]}
                                 >
-                                    {step === 0 ? 'Get OTP' : 'Login'}
+                                    {resendTimer > 0
+                                        ? `Resend in ${resendTimer}s`
+                                        : "Resend OTP"}
                                 </Text>
                             </TouchableOpacity>
-                            {step !== 0 && <View style={styles.otherOptions}>
-                                <TouchableOpacity
-                                    style={styles.subOption}
-                                    onPress={() => setStep(0)}
-                                >
-                                    <Text style={styles.subOptionText}>
-                                        Change Phone Number?
-                                    </Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    onPress={handleResendOTP}
-                                    disabled={resendTimer > 0}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.resendLink,
-                                            resendTimer > 0 && styles.resendDisabled,
-                                        ]}
-                                    >
-                                        {resendTimer > 0
-                                            ? `Resend in ${resendTimer}s`
-                                            : "Resend OTP"}
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>}
-                        </View>
+                            <Text style={{
+                                color: theme.colors.textPrimary
+                            }}>OTP is: {display}</Text>
+                        </View>}
                     </View>
+                </View>
             </SafeAreaView>
         </>
     )
@@ -184,7 +235,7 @@ const createStyles = (theme: any) => StyleSheet.create({
         alignItems: 'center',
 
         shadowColor: theme.colors.boxShadow,
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: {width: 0, height: 4},
         shadowOpacity: 1,
         shadowRadius: 8,
         elevation: 4,

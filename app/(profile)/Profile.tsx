@@ -12,14 +12,11 @@ const Profile = () => {
     const {theme} = useTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const [tabs, setTabs] = useState<'details' | 'security'>('details');
-    const {isAuthenticated, isLoading, profilePicture, fullName, email, gender, phone} = useUser();
+    const {isAuthenticated, isLoading,} = useUser();
     //
     // useEffect(() => {
     //     if (!isAuthenticated) router.replace('/Login')
     // }, [isAuthenticated]);
-    console.log(
-        'Hello'
-    )
 
     if (isLoading) {
         return (

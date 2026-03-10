@@ -4,6 +4,8 @@ import {Calendar, Search} from "lucide-react-native";
 import {useTheme} from "react-native-zustand-theme";
 import {useMemo} from "react";
 import {router} from "expo-router";
+import Footer from "@/components/Footer";
+import './ReactotronConfig';
 
 export default function Index() {
     const {theme, toggleMode, isDark} = useTheme();
