@@ -1,4 +1,4 @@
-import React, {useMemo, useState, useEffect} from "react";
+import React, {useMemo, useState, useEffect, useRef, useCallback} from "react";
 import {
     Text,
     View,
@@ -6,10 +6,15 @@ import {
     TextInput,
     FlatList,
     TouchableOpacity,
-    ActivityIndicator, Alert, Platform, PermissionsAndroid,
+    ActivityIndicator,
+    Alert, Platform, PermissionsAndroid,
 } from "react-native";
-import Mapbox, { Camera, MapView, UserLocation, UserTrackingMode } from '@rnmapbox/maps';import {SafeAreaView} from "react-native-safe-area-context";
+import Mapbox, {Camera, MapView, UserLocation, UserTrackingMode} from '@rnmapbox/maps';
+import {SafeAreaView} from "react-native-safe-area-context";
 import {useTheme} from "react-native-zustand-theme";
+import {ChevronLeft, LocateFixed} from "lucide-react-native";
+import {router} from "expo-router";
+import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
 
 const requestLocationPermission = async () => {
     if (Platform.OS === 'android') {
@@ -20,7 +25,9 @@ const requestLocationPermission = async () => {
     }
     return true;
 };
-requestLocationPermission().catch((error) => {console.log(error);});
+requestLocationPermission().catch((error) => {
+    console.log(error);
+});
 
 const mapboxToken: string | null = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN || null
 
@@ -39,10 +46,28 @@ const SearchPage = () => {
     const [results, setResults] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedLocation, setSelectedLocation] = useState<any>(null);
-    const [isFollowing, setIsFollowing] = useState<boolean | any>(true);
+    const [isFollowing, setIsFollowing] = useState<boolean>(true);
+    const [userLocation, setUserLocation] = useState<Mapbox.Location>()
+
+    const cameraRef = useRef<Mapbox.Camera>(null)
+    const bottomSheetRef = useRef<BottomSheet>(null);
+
+    const snapPoints = useMemo(() => ['15%', '45%', '90%'], [])
+
+    const recenterMap = useCallback(() => {
+        console.log('recenterMap');
+        if (!userLocation) return
+        cameraRef.current?.setCamera({
+            centerCoordinate: [
+                userLocation.coords.longitude,
+                userLocation.coords.latitude
+            ],
+            zoomLevel: 17,
+            animationDuration: 700
+        })
+    }, [userLocation, cameraRef])
 
     const handleCameraChange = (event: any) => {
-        // event.gesture indicates if the user moved the map with their finger
         if (event.gesture) {
             setIsFollowing(false);
         }
@@ -61,11 +86,15 @@ const SearchPage = () => {
         return () => clearTimeout(delay);
     }, [query]);
 
+    useEffect(() => {
+        console.log('User Location is: ', userLocation);
+    }, [userLocation]);
+
     const searchPlaces = async (text: string) => {
         try {
             setLoading(true);
             const response = await fetch(
-                `https://api.mapbox.com/geocoding/v5/mapbox.places/${text}.json?access_token=YOUR_MAPBOX_ACCESS_TOKEN&limit=5`
+                `https://api.mapbox.com/geocoding/v5/mapbox.places/${text}.json?access_token=${mapboxToken}&limit=5`
             );
             const data = await response.json();
             setResults(data.features || []);
@@ -87,34 +116,29 @@ const SearchPage = () => {
             {/* MAP */}
             <MapView
                 style={styles.map}
-                onCameraChanged={handleCameraChange} // Replacement for onDragStart
+                onCameraChanged={handleCameraChange}
+                onRegionDidChange={() => {
+                    if (!userLocation) return
+                    setIsFollowing(false)
+                }}
             >
+
                 <Camera
                     followUserLocation={isFollowing}
                     followZoomLevel={17}
-                    // Use the UserTrackingMode enum to satisfy TypeScript
                     followUserMode={UserTrackingMode.FollowWithCourse}
                     animationMode={'easeTo'}
+                    ref={cameraRef}
                 />
 
                 <UserLocation
                     visible={true}
                     animated={true}
                     androidRenderMode="gps"
+                    onUpdate={(location) => setUserLocation(location)}
                 />
             </MapView>
 
-            {/* SEARCH OVERLAY */}
-            <View style={styles.searchContainer}>
-                <TextInput
-                    placeholder="Where to?"
-                    placeholderTextColor={theme.colors.textSecondary}
-                    value={query}
-                    onChangeText={setQuery}
-                    style={styles.input}
-                />
-                {loading && <ActivityIndicator size="small" />}
-            </View>
 
             {/* RESULTS LIST */}
             {results.length > 0 && (
@@ -135,6 +159,34 @@ const SearchPage = () => {
                     />
                 </View>
             )}
+            {router.canGoBack() &&
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => router.back()}
+                >
+                    <ChevronLeft size={theme.fontSize.xxl} color={theme.colors.textPrimary}/>
+                </TouchableOpacity>}
+
+            <TouchableOpacity
+                onPress={recenterMap}
+                style={styles.recenterButton}
+            >
+                <LocateFixed size={24} color={theme.colors.textPrimary}/>
+            </TouchableOpacity>
+            <BottomSheet
+                ref={bottomSheetRef}
+                index={2}
+                snapPoints={snapPoints}
+                enablePanDownToClose={false} keyboardBehavior={'extend'}
+                handleIndicatorStyle={{backgroundColor: theme.colors.textPrimary}}
+                handleStyle={{backgroundColor: theme.colors.background}}
+            >
+                <BottomSheetView
+                    style={styles.bottomSheet}
+                >
+                    <Text style={{color: theme.colors.textPrimary}}>This is a bottom Sheet</Text>
+                </BottomSheetView>
+            </BottomSheet>
         </SafeAreaView>
     );
 };
@@ -163,10 +215,6 @@ const createStyles = (theme: any) =>
             borderColor: "#fff",
         },
         searchContainer: {
-            position: "absolute",
-            top: 20,
-            left: 16,
-            right: 16,
             backgroundColor: theme.colors.card,
             borderRadius: 12,
             padding: 12,
@@ -200,4 +248,30 @@ const createStyles = (theme: any) =>
             color: theme.colors.textPrimary,
             fontSize: 14,
         },
+        backButton: {
+            marginTop: 20,
+            position: 'absolute',
+            top: 20,
+            left: 12,
+            height: 50,
+            width: 50,
+            borderRadius: 25,
+            backgroundColor: theme.colors.background,
+            justifyContent: 'center',
+            alignItems: 'center'
+        },
+        recenterButton: {
+            position: 'absolute',
+            bottom: 120,
+            right: 20,
+            backgroundColor: 'white',
+            padding: 12,
+            borderRadius: 10
+        },
+        bottomSheet: {
+            height: "100%",
+            backgroundColor: theme.colors.card,
+            paddingVertical: theme.spacing.lg,
+            paddingHorizontal: theme.spacing.lg,
+        }
     });
