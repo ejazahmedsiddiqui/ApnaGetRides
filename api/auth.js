@@ -26,4 +26,6 @@ export const userLoginVerifyOtp = async (identifier, otp) => {
         console.log('Error caught in userLogin try/catch ⟼ ', error);
         return {error}
     }
-}
+};
+
+
