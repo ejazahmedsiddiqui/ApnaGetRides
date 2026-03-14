@@ -1,51 +1,40 @@
-# Welcome to ApnaGetRide 👋
+function debounce(fn, delay) {
+let timer;                          // 1. one timer, shared across all calls
 
-ApnaGetRide is a ride hailing app created using React Native, expo go, [WebSocket]()
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
-
-## Get started
-
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+return function (...args) {         // 2. this is what you actually call
+clearTimeout(timer);              // 3. cancel any previous pending call
+timer = setTimeout(() => {        // 4. schedule a new one
+fn.apply(this, args);           // 5. finally call the real function
+}, delay);
+};
+}
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+**Line 1 — `let timer`:**
+This lives in the closure. 
+It's shared across every call to the returned function. 
+This is the key — there's only ONE timer, so each new call can cancel the previous one.
 
-## Learn more
+**Line 2 — `return function(...args)`:**
+`debounce()` doesn't call `fn` directly. 
+It returns a *new wrapper function*. That wrapper is what you assign to `handleSearch` etc.
 
-To learn more about developing your project with Expo, look at the following resources:
+**Line 3 — `clearTimeout(timer)`:**
+Every time the wrapper is called, it immediately cancels the previous scheduled call. 
+If the user typed a letter 200ms ago and types another now, the previous timer is killed before it fires.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+**Line 4 — `timer = setTimeout(..., delay)`:**
+A fresh timer is started. 
+If nobody calls the wrapper again within `delay` ms, this one will actually fire.
 
-## Join the community
+**Line 5 — `fn.apply(this, args)`:**
+Finally calls your real function with the correct `this` context and all the original arguments.
 
-Join our community of developers creating universal apps.
+---
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+**Visualising the timer cancelling**
+```
+keystroke:  h        e        l        l        o        [pause 300ms]
+|        |        |        |        |              |
+timer:    start    cancel   cancel   cancel   cancel         FIRES!
++start   +start   +start   +start     fetchResults("hello")

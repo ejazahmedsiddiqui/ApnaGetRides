@@ -8,7 +8,7 @@ export const userLoginGetOtp = async (identifier) => {
         return {success: true, data: response.data}
     } catch (error) {
         console.log('Error caught in userLogin try/catch ⟼ ', error);
-        return {error}
+        return {success: false, error}
     }
 };
 
@@ -20,12 +20,21 @@ export const userLoginVerifyOtp = async (identifier, otp) => {
             identifier: identifier,
             otp: otp
         });
-        console.log('@/api/auth/userLoginVerifyOtp response is: ',response);
         return {success: true, data: response.data}
     } catch (error) {
         console.log('Error caught in userLogin try/catch ⟼ ', error);
-        return {error}
+        return {success: false, error}
     }
 };
 
+export const getUserProfile = async (token) => {
+    console.log('@/api/auth/getUserProfile Accessed');
+    try {
+        const response = await apiClient.get('/auth/profile');
+        return {success: true, data: response.data}
+    } catch (error) {
+        console.log('Error caught in getUserProfile try/catch ⟼ ', error);
+        return {success: false, error}
+    }
+}
 

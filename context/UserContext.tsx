@@ -1,5 +1,9 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import {createMMKV} from "react-native-mmkv";
+import * as SecureStore from "expo-secure-store";
+import {getUserProfile} from "@/api";
+
+const storage = createMMKV({ id: 'user-storage'})
 
 // Types
 interface UserState {
@@ -17,6 +21,7 @@ interface UserContextType extends UserState {
     login: (phone: string, token: string) => Promise<{ success: boolean; data: string }>;
     logout: () => Promise<{ success: boolean }>;
     updateToken: (newToken: string) => Promise<void>;
+    getProfile: (token: string) => Promise<void>;
     updateProfile: (profile: Partial<Pick<UserState, "gender" | "email" | "fullName" | "profilePicture">>) => Promise<void>;
 }
 
@@ -24,14 +29,25 @@ interface UserProviderProps {
     children: ReactNode;
 }
 
+const SECURE_KEYS = {
+    TOKEN: "userToken",
+} as const;
+
 const STORAGE_KEYS = {
     PHONE: "userPhone",
-    TOKEN: "userToken",
     GENDER: "userGender",
     EMAIL: "userEmail",
     FULL_NAME: "userFullName",
     PROFILE_PICTURE: "userProfilePicture",
 } as const;
+
+const secureGet = (key: string): Promise<string | null> => SecureStore.getItemAsync(key);
+const secureSet = (key: string, value: string): Promise<void> => SecureStore.setItemAsync(key, value);
+const secureDelete = (key: string): Promise<void> => SecureStore.deleteItemAsync(key);
+
+const mmkvGet = (key: string): string | null => storage.getString(key) ?? null;
+const mmkvSet = (key: string, value: string): void => storage.set(key, value);
+const mmkvDelete = (key: string): boolean => storage.remove(key);
 
 // Context
 const UserContext = createContext<UserContextType | null>(null);
@@ -54,20 +70,17 @@ export const UserProvider = ({ children }: UserProviderProps) => {
 
     const loadUserData = async (): Promise<void> => {
         try {
-            const [storedPhone, storedToken, storedGender, storedEmail, storedFullName, storedProfilePicture] =
-                await AsyncStorage.multiGet(Object.values(STORAGE_KEYS));
-
-            const phone = storedPhone[1];
-            const token = storedToken[1];
+            const token = await secureGet(SECURE_KEYS.TOKEN);
+            const phone = mmkvGet(STORAGE_KEYS.PHONE);
 
             if (phone && token) {
                 setUser({
                     phone,
                     token,
-                    gender: storedGender[1],
-                    email: storedEmail[1],
-                    fullName: storedFullName[1],
-                    profilePicture: storedProfilePicture[1],
+                    gender: mmkvGet(STORAGE_KEYS.GENDER),
+                    email: mmkvGet(STORAGE_KEYS.EMAIL),
+                    fullName: mmkvGet(STORAGE_KEYS.FULL_NAME),
+                    profilePicture: mmkvGet(STORAGE_KEYS.PROFILE_PICTURE),
                     isAuthenticated: true,
                     isLoading: false,
                 });
@@ -80,20 +93,15 @@ export const UserProvider = ({ children }: UserProviderProps) => {
         }
     };
 
-    const login = async (phone: string, token: string): Promise<{ success: boolean; data: string }> => {
+    const login =
+        async (phone: string, token: string): Promise<{ success: boolean; data: string }> =>
+        {
         try {
-            await AsyncStorage.multiSet([
-                [STORAGE_KEYS.PHONE, phone],
-                [STORAGE_KEYS.TOKEN, token],
-            ]);
-
-            setUser((prev) => ({
-                ...prev,
-                phone,
-                token,
-                isAuthenticated: true,
-                isLoading: false,
-            }));
+            await secureSet(SECURE_KEYS.TOKEN, token);
+            mmkvSet(STORAGE_KEYS.PHONE, phone);
+            await getProfile()
+                .then(() => console.log('Get Profile called successfully'))
+                .catch((e) => console.error(e));
             return { success: true, data: token };
         } catch (error) {
             console.error("Error saving user data:", error);
@@ -103,8 +111,8 @@ export const UserProvider = ({ children }: UserProviderProps) => {
 
     const logout = async (): Promise<{ success: boolean }> => {
         try {
-            await AsyncStorage.multiRemove(Object.values(STORAGE_KEYS));
-
+            await secureDelete(SECURE_KEYS.TOKEN);
+            Object.values(STORAGE_KEYS).forEach(mmkvDelete);
             setUser({
                 phone: null,
                 token: null,
@@ -124,7 +132,7 @@ export const UserProvider = ({ children }: UserProviderProps) => {
 
     const updateToken = async (newToken: string): Promise<void> => {
         try {
-            await AsyncStorage.setItem(STORAGE_KEYS.TOKEN, newToken);
+            await secureSet(SECURE_KEYS.TOKEN, newToken);
             setUser((prev) => ({ ...prev, token: newToken }));
         } catch (error) {
             console.error("Error updating token:", error);
@@ -132,6 +140,20 @@ export const UserProvider = ({ children }: UserProviderProps) => {
         }
     };
 
+    const getProfile = async () => {
+        console.log('@/context/UserContext/getProfile Accessed');
+        const token = await secureGet(SECURE_KEYS.TOKEN);
+        console.log('Access Token is: ',token);
+        try {
+            const result = await getUserProfile(token);
+            if(result.success) {
+                console.log('get profile success, result Data is: ', result.data);
+            }
+        } catch (error) {
+            console.error("Error clearing user data:", error);
+            throw error;
+        }
+    }
     const updateProfile = async (
         profile: Partial<Pick<UserState, "gender" | "email" | "fullName" | "profilePicture">>
     ): Promise<void> => {
@@ -143,13 +165,11 @@ export const UserProvider = ({ children }: UserProviderProps) => {
                 profilePicture: STORAGE_KEYS.PROFILE_PICTURE,
             };
 
-            const pairs = Object.entries(profile)
-                .filter(([, value]) => value !== undefined && value !== null)
-                .map(([key, value]) => [storageMap[key], value as string] as [string, string]);
-
-            if (pairs.length > 0) {
-                await AsyncStorage.multiSet(pairs);
-            }
+            Object.entries(profile).forEach(([key, value]) => {
+                if (value != null) {
+                    mmkvSet(storageMap[key], value as string);
+                }
+            });
 
             setUser((prev) => ({ ...prev, ...profile }));
         } catch (error) {
@@ -170,6 +190,7 @@ export const UserProvider = ({ children }: UserProviderProps) => {
         login,
         logout,
         updateToken,
+        getProfile,
         updateProfile,
     };
 
