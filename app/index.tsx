@@ -1,15 +1,16 @@
-import {Text, View, StyleSheet, TouchableOpacity, Dimensions, ScrollView, StatusBar} from "react-native";
+import {Text, View, StyleSheet, TouchableOpacity, ScrollView, StatusBar, FlatList} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {Search, MapPin, Clock, ChevronRight} from "lucide-react-native";
 import {useTheme} from "react-native-zustand-theme";
-import {useMemo} from "react";
+import React, {useMemo} from "react";
 import {router} from "expo-router";
 import './ReactotronConfig';
 import HeroCarousels from "@/components/HeroCarousels";
 
 export default function Index() {
     const {theme, toggleMode, isDark} = useTheme();
-    const styles = useMemo(() => createStyles(theme, isDark), [theme, isDark]);
+    const styles = useMemo(() =>
+        createStyles(theme, isDark), [theme, isDark]);
 
     const quickDestinations = [
         {id: '1', label: 'Home', icon: '🏠'},
@@ -23,10 +24,9 @@ export default function Index() {
         {id: '3', emoji: '🍔', label: 'Eats'},
         {id: '4', emoji: '🛵', label: 'Auto'},
     ];
-
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
-            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'}/>
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}>
@@ -41,17 +41,16 @@ export default function Index() {
                         <Text style={styles.avatarText}>{isDark ? '☀️' : '🌙'}</Text>
                     </TouchableOpacity>
                 </View>
-
                 {/* ── Search Bar ── */}
                 <TouchableOpacity
                     style={styles.searchBar}
                     onPress={() => router.push('/SearchPage')}
                     activeOpacity={0.85}>
                     <View style={styles.searchIconWrap}>
-                        <Search size={18} color={isDark ? '#fff' : '#000'} strokeWidth={2.5} />
+                        <Search size={18} color={isDark ? '#fff' : '#000'} strokeWidth={2.5}/>
                     </View>
                     <Text style={styles.searchPlaceholder}>Enter pickup location</Text>
-                    <ChevronRight size={18} color={theme.colors.textSecondary} />
+                    <ChevronRight size={18} color={theme.colors.textSecondary}/>
                 </TouchableOpacity>
 
                 {/* ── Quick Destinations ── */}
@@ -79,7 +78,7 @@ export default function Index() {
 
                 {/* ── Hero Carousel ── */}
                 <Text style={styles.sectionLabel}>Offers & Promotions</Text>
-                <HeroCarousels />
+                <HeroCarousels/>
 
                 {/* ── Recent Trips ── */}
                 <View style={styles.recentSection}>
@@ -92,13 +91,13 @@ export default function Index() {
                     {['Airport Terminal 2', 'Central Mall'].map((place, i) => (
                         <TouchableOpacity key={i} style={styles.recentItem} activeOpacity={0.75}>
                             <View style={styles.recentIconWrap}>
-                                <Clock size={16} color={theme.colors.textSecondary} />
+                                <Clock size={16} color={theme.colors.textSecondary}/>
                             </View>
                             <View style={styles.recentInfo}>
                                 <Text style={styles.recentTitle}>{place}</Text>
                                 <Text style={styles.recentSub}>Tap to ride again</Text>
                             </View>
-                            <ChevronRight size={16} color={theme.colors.textSecondary} />
+                            <ChevronRight size={16} color={theme.colors.textSecondary}/>
                         </TouchableOpacity>
                     ))}
                 </View>
@@ -108,7 +107,7 @@ export default function Index() {
                     style={styles.primaryButton}
                     activeOpacity={0.9}
                     onPress={() => router.push('/SearchPage')}>
-                    <MapPin size={18} color={isDark ? '#000' : '#fff'} strokeWidth={2.5} />
+                    <MapPin size={18} color={isDark ? '#000' : '#fff'} strokeWidth={2.5}/>
                     <Text style={styles.primaryButtonText}>See prices near you</Text>
                 </TouchableOpacity>
 
@@ -125,7 +124,6 @@ export default function Index() {
                         <Text style={[styles.authButtonText, styles.authFillText]}>Sign up</Text>
                     </TouchableOpacity>
                 </View>
-
             </ScrollView>
         </SafeAreaView>
     );

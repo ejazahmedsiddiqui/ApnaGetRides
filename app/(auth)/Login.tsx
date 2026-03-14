@@ -1,32 +1,24 @@
 import {SafeAreaView} from "react-native-safe-area-context";
-import {Alert, StyleSheet, Text, TouchableOpacity, View} from "react-native";
+import {ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import {StatusBar} from "expo-status-bar";
 import RenderFormField from "@/components/RenderFormField";
 import {useEffect, useMemo, useState} from "react";
 import {router} from "expo-router";
 import {useTheme} from "react-native-zustand-theme";
-import {userLoginGetOtp, userLoginVerifyOtp} from "@/api/auth";
-
-
-interface loadingState {
-    isPhone: boolean | number;
-    isOtp: boolean | number;
-    isEmail: boolean | number;
-}
+import {useUser} from "@/context/UserContext";
+import {useOtpLogin} from "@/hooks/useOtpLogin";
+import {AlertTriangle} from "lucide-react-native";
 
 const Login = () => {
-    const [loading, setLoading] = useState<loadingState>({
-        isEmail: false,
-        isOtp: false,
-        isPhone: false,
-    });
+
     const [phoneNumber, setPhoneNumber] = useState('');
-    const [display, setDisplay] = useState("");
     const [otp, setOtp] = useState('');
     const [step, setStep] = useState(0);
     const [resendTimer, setResendTimer] = useState(0);
     const [errors, setErrors] = useState({phone: "", otp: ""});
     const {theme, isDark} = useTheme();
+    const {login} = useUser();
+    const {data, loading, getOtp, verifyOtp, error} = useOtpLogin()
     const styles = useMemo(() => createStyles(theme), [theme]);
 
     useEffect(() => {
@@ -38,39 +30,7 @@ const Login = () => {
         }
         return () => clearInterval(interval);
     }, [resendTimer]);
-    const getOtp = async () => {
-        if (phoneNumber.length !== 10) return;
-        setLoading((prev) => ({...(prev as loadingState), isPhone: true}));
-        try {
-            const response = await userLoginGetOtp(phoneNumber);
-            if (response.success) {
-                Alert.alert('OTP received', 'Otp received');
-                setDisplay(response.data.otp);
-                setStep(1)
-            } else Alert.alert('Error', 'An error occurred.');
-        } catch (error) {
-            console.log('@/app/auth/Login ⟼ getOtp error is' + error);
-        } finally {
-            setLoading(prev => ({...(prev as loadingState), isPhone: false}));
-        }
-    }
 
-    const verifyOtp = async () => {
-        if (otp.length !== 4) return;
-        setLoading((prev) => ({...(prev as loadingState), isOtp: true}));
-        try {
-            const response = await userLoginVerifyOtp(phoneNumber, otp);
-            if (response.success) {
-                Alert.alert('OTP verified', 'Otp verified');
-                setLoading(prev => ({...(prev as loadingState), isOtp: false}));
-                router.replace('/')
-            } else Alert.alert('Error', 'An error occurred.');
-        } catch (error) {
-            console.log('@/app/auth/Login ⟼ getOtp error is' + error);
-        } finally {
-            setLoading(prev => ({...(prev as loadingState), isOtp: false}));
-        }
-    }
     const handleLoginButtonPress = () => {
         switch (step) {
             case 0:
@@ -78,8 +38,7 @@ const Login = () => {
                     Alert.alert('Error', `Please Enter 10-digit phone number`);
                     return;
                 }
-                getOtp()
-                    .catch((error) => console.log('@/app/auth/Login ⟼ getOtp Error is', error));
+                getOtp(phoneNumber).then(() => setStep(1))
                 setResendTimer(30);
                 break;
             case 1:
@@ -87,7 +46,8 @@ const Login = () => {
                     Alert.alert('Error', `Please Enter 6-digit OTP`);
                     return;
                 }
-                verifyOtp()
+                verifyOtp(otp)
+                    .then(() => router.push('/'))
                     .catch((error) => console.log('@/app/auth/Login ⟼ verifyOtp Error is', error));
                 break;
             default:
@@ -107,7 +67,6 @@ const Login = () => {
     const isGetOtpDisabled = phoneNumber.length !== 10;
     const isLoginDisabled = otp.length !== 4;
     const isDisabled = step === 0 ? isGetOtpDisabled : isLoginDisabled;
-
     return (
         <>
             <StatusBar style={'light'}/>
@@ -120,7 +79,16 @@ const Login = () => {
                         <Text style={styles.companyTitle}>Apna</Text>
                         <Text style={styles.appTitle}>GetRide</Text>
                     </View>
-                    <View style={styles.loginContainer}>
+                    {error && !loading && (
+                        <View style={styles.formField}>
+                            <View style={styles.errorContainer}>
+                                <AlertTriangle size={24} color={'yellow'} fill={'red'}/>
+                                <Text style={styles.errorText}>{error}</Text>
+                                <AlertTriangle size={24} color={'yellow'} fill={'red'}/>
+                            </View>
+                        </View>
+                    )}
+                    {!error && !loading && <View style={styles.loginContainer}>
                         <View style={styles.formField}>
                             {step === 0 && (<RenderFormField
                                 label={'Phone Number'}
@@ -131,7 +99,7 @@ const Login = () => {
                                 placeholder={'Enter your 10-digit phone number'}
                                 labelColorActive={isDark ? '#9ef0ff' : '#9eb1ff'}
                             />)}
-                            {step === 1 && loading.isPhone === false && (<RenderFormField
+                            {step === 1 && !loading && (<RenderFormField
                                 label={'Enter your OTP'}
                                 value={otp}
                                 onChangeText={setOtp}
@@ -182,11 +150,20 @@ const Login = () => {
                                         : "Resend OTP"}
                                 </Text>
                             </TouchableOpacity>
-                            <Text style={{
+                            {data && data.otp && <Text style={{
                                 color: theme.colors.textPrimary
-                            }}>OTP is: {display}</Text>
+                            }}>OTP is: {data?.otp}</Text>}
                         </View>}
-                    </View>
+                    </View>}
+                    {loading && <SafeAreaView style={styles.container}>
+                        <View style={{
+                            flex: 1,
+                            justifyContent: 'flex-start',
+                            alignItems: 'center'
+                        }}>
+                            <ActivityIndicator size={50} color={theme.colors.textPrimary}/>
+                        </View>
+                    </SafeAreaView>}
                 </View>
             </SafeAreaView>
         </>
@@ -217,7 +194,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     },
 
     loginContainer: {
-        marginTop: '30%',
         paddingHorizontal: 20,
         flex: 1,
         alignItems: 'center',
@@ -225,6 +201,23 @@ const createStyles = (theme: any) => StyleSheet.create({
     formField: {
         // flex: 1,
         marginVertical: 20,
+    },
+    errorContainer: {
+        flexDirection: 'row',
+        gap: 12,
+        marginTop: '4%',
+        backgroundColor: theme.colors.surface,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 20,
+        borderWidth: 2,
+        borderColor: theme.colors.border
+    },
+    errorText: {
+        fontSize: 25,
+        color: theme.colors.textPrimary
     },
     loginButton: {
         width: '100%',

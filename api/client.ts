@@ -2,12 +2,13 @@ import axios, {InternalAxiosRequestConfig} from "axios";
 import * as Application from 'expo-application';
 import {Platform} from "react-native";
 import {createMMKV} from "react-native-mmkv";
+import * as SecureStore from "expo-secure-store";
 
-//mmkv storage wrapper
-export const storage = createMMKV();
-
+export const storage = createMMKV({ id: 'user_storage'});
+const SECURE_KEYS = {
+    TOKEN: "userToken",
+} as const;
 const BASE_URL = process.env.EXPO_PUBLIC_API
-console.log('baseURL', BASE_URL);
 const apiClient = axios.create({
     baseURL: BASE_URL,
     timeout: 10000,
@@ -15,17 +16,6 @@ const apiClient = axios.create({
         'Content-Type': 'application/json',
     }
 });
-
-// let logoutHandler = null;
-//
-// let isLoggingOut = false;
-//
-// export const setLogoutHandler = (handler: any) => {
-//     logoutHandler = handler;
-// };
-// export const setIsLoggingOut = (value: any) => {
-//     isLoggingOut = value;
-// };
 
 apiClient.interceptors.request.use(
     async (config: InternalAxiosRequestConfig) => {
@@ -40,9 +30,9 @@ apiClient.interceptors.request.use(
         }
         console.log('@api/client.js apiClient.interceptors.request.use accessed');
         try {
-            if (storage.contains('token')) {
-                console.tron.log('User token found. ')
-                const token = storage.getString('token');
+            // ✅ FIXED: Fetch token async inside the interceptor
+            const token = await SecureStore.getItemAsync(SECURE_KEYS.TOKEN);
+            if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
                 config.headers.Accept = 'application/json';
             }
@@ -145,7 +135,6 @@ apiClient.interceptors.response.use((response) => {
             important: true,
         });
 
-        // If it's a 401 error, highlight it
         if (error.response?.status === 401) {
             console.tron.display({
                 name: '🚨 AUTHENTICATION ERROR',
