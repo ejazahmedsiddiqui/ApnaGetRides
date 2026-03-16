@@ -1,16 +1,20 @@
-import {apiClient} from "./index";
+import { apiClient } from "./index";
 
 export const heroList = async () => {
-    console.log('@/api/heroList accessed');
     try {
         const response = await apiClient.get('/slider');
-        if (299 >= response.status <= 200) {
+        const isSuccess = response.status >= 200 && response.status <= 299;
+        if (isSuccess) {
             console.log('Hero list fetched successfully');
+            return { success: true, data: response.data };
         } else {
             console.error('Hero list fetch failed:', response.status);
+            return { success: false, data: null };
         }
-        return {success: true, data: response.data};
     } catch (error) {
-        console.log(error)
+        if (error instanceof Error) {
+            console.error('Hero list fetch error:', error.message);
+        }
+        return { success: false, data: null, error: error.message };
     }
 };

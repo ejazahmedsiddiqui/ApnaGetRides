@@ -1,8 +1,9 @@
 import Carousel from 'react-native-reanimated-carousel';
 import {View, Text, Dimensions, Image, TouchableOpacity, ActivityIndicator, StyleSheet} from 'react-native';
-import {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {heroList} from '@/api/hero';
 import {useTheme} from "react-native-zustand-theme";
+import {useHeroList} from "@/hooks/useHeroList";
 
 const {width} = Dimensions.get('window');
 
@@ -10,32 +11,26 @@ const CARD_WIDTH = width - 48;
 const CARD_HEIGHT = 180;
 
 export default function HeroCarousels() {
-    const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const {theme } = useTheme()
-    useEffect(() => {
-        const fetchHero = async () => {
-            const result = await heroList();
-            if (result?.success && result?.data?.length) {
-                setData(result.data.filter(item => item.isActive));
-            }
-            setLoading(false);
-        };
-        fetchHero().catch((error) => {console.log('An error occurred in fetchHero: ', error)});
-    }, []);
+    const {theme } = useTheme();
+    const { data, loading, error} = useHeroList()
+    const styles = useMemo(() =>
+        createStyles(theme), [theme]);
 
-    if (loading) {
+
+    if (loading && !error) {
         return (
             <View style={styles.loaderContainer}>
                 <ActivityIndicator size="small" color={theme.colors.textPrimary} />
             </View>
         );
     }
+    if (!loading && error) return null;
 
     if (!data.length) return null;
 
     return (
         <View style={styles.wrapper}>
+            <Text style={styles.sectionLabel}>Offers & Promotions</Text>
             <Carousel
                 data={data}
                 width={CARD_WIDTH + 16}
@@ -80,7 +75,7 @@ export default function HeroCarousels() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => StyleSheet.create({
     wrapper: {
         marginTop: 20,
         marginBottom: 4,
@@ -132,5 +127,13 @@ const styles = StyleSheet.create({
     cardImage: {
         width: 155,
         alignSelf: 'stretch',
+    },
+    sectionLabel: {
+        alignSelf: 'flex-start',
+        fontSize: 17,
+        fontWeight: '700',
+        color: theme.colors.textPrimary,
+        marginBottom: 14,
+        letterSpacing: -0.2,
     },
 });

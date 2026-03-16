@@ -1,17 +1,31 @@
-import {Text, View, StyleSheet, TouchableOpacity, ScrollView, StatusBar, FlatList} from "react-native";
+import {
+    Text,
+    View,
+    StyleSheet,
+    TouchableOpacity,
+    ScrollView,
+    StatusBar,
+    ActivityIndicator
+} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {Search, MapPin, Clock, ChevronRight} from "lucide-react-native";
 import {useTheme} from "react-native-zustand-theme";
-import React, {useMemo} from "react";
+import React, {useEffect, useMemo} from "react";
 import {router} from "expo-router";
 import './ReactotronConfig';
 import HeroCarousels from "@/components/HeroCarousels";
+import {useHeroList} from "@/hooks/useHeroList";
+
 
 export default function Index() {
     const {theme, toggleMode, isDark} = useTheme();
     const styles = useMemo(() =>
         createStyles(theme, isDark), [theme, isDark]);
 
+    const { data, getHeroList, loading, error} = useHeroList();
+    useEffect(() => {
+        console.log('Data is : ', data)
+    }, [data]);
     const quickDestinations = [
         {id: '1', label: 'Home', icon: '🏠'},
         {id: '2', label: 'Work', icon: '💼'},
@@ -24,6 +38,7 @@ export default function Index() {
         {id: '3', emoji: '🍔', label: 'Eats'},
         {id: '4', emoji: '🛵', label: 'Auto'},
     ];
+
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'}/>
@@ -75,9 +90,6 @@ export default function Index() {
                         </TouchableOpacity>
                     ))}
                 </View>
-
-                {/* ── Hero Carousel ── */}
-                <Text style={styles.sectionLabel}>Offers & Promotions</Text>
                 <HeroCarousels/>
 
                 {/* ── Recent Trips ── */}
@@ -234,7 +246,10 @@ const createStyles = (theme: any, isDark: boolean) =>
             marginBottom: 14,
             letterSpacing: -0.2,
         },
-
+        activityStyle: {
+          justifyContent: 'center',
+          alignItems: 'center',
+        },
         /* Services */
         servicesRow: {
             flexDirection: 'row',

@@ -65,7 +65,8 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     });
 
     useEffect(() => {
-        loadUserData();
+        loadUserData()
+            .catch((error) => console.log('There was an error loading user Data: ', error));
     }, []);
 
     const loadUserData = async (): Promise<void> => {
@@ -74,16 +75,14 @@ export const UserProvider = ({ children }: UserProviderProps) => {
             const phone = mmkvGet(STORAGE_KEYS.PHONE);
 
             if (phone && token) {
-                setUser({
+                setUser((prev) => ({...prev,
                     phone,
-                    token,
                     gender: mmkvGet(STORAGE_KEYS.GENDER),
                     email: mmkvGet(STORAGE_KEYS.EMAIL),
                     fullName: mmkvGet(STORAGE_KEYS.FULL_NAME),
                     profilePicture: mmkvGet(STORAGE_KEYS.PROFILE_PICTURE),
                     isAuthenticated: true,
-                    isLoading: false,
-                });
+                    isLoading: false,}));
             } else {
                 setUser((prev) => ({ ...prev, isLoading: false }));
             }
