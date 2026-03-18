@@ -9,12 +9,6 @@ import {useOtpLogin} from "@/hooks/useOtpLogin";
 import {AlertTriangle} from "lucide-react-native";
 import {useUser} from "@/context/UserContext";
 
-type resultType = {
-    success: boolean,
-    errorMessage: string,
-    errorStatus: number,
-    error: any
-}
 const Login = () => {
 
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -24,11 +18,10 @@ const Login = () => {
     const [errors, setErrors] = useState([]);
     const {theme, isDark} = useTheme();
 
-    const {login, isLoading, message} = useUser();
-
+    const {login, isLoading, message, isAuthenticated} = useUser();
     const {loading, getOtp, error} = useOtpLogin();
-
     const styles = useMemo(() => createStyles(theme), [theme]);
+
     useEffect(() => {
         let interval: number = 0;
         if (resendTimer > 0) {
@@ -38,6 +31,12 @@ const Login = () => {
         }
         return () => clearInterval(interval);
     }, [resendTimer]);
+
+    useEffect(() => {
+        if(isAuthenticated)
+            router.replace('/Profile')
+    }, [isAuthenticated]);
+
 
     const handleLoginButtonPress = async () => {
         switch (step) {
@@ -63,7 +62,7 @@ const Login = () => {
 
                 // 3. Use the Context Login to handle verification and profile fetching
                 const result: { success: boolean; error?: any; errorMessage?: string; errorStatus?: number } = await login(phoneNumber, otp);
-                console.log(result);
+
                 if (result.success) {
                     // Navigate home - UserContext now holds the profile and token
                     router.replace('/');
@@ -123,7 +122,7 @@ const Login = () => {
                                     inputType={'numeric'}
                                     maxLength={10}
                                     placeholder={'Enter your 10-digit phone number'}
-                                    labelColorActive={isDark ? '#9ef0ff' : '#9eb1ff'}
+                                    labelColorActive={isDark ? '#00859e' : '#9efffc'}
                                 />)}
                                 {step === 1 && !loading && (<RenderFormField
                                     label={'Enter your OTP'}
@@ -132,8 +131,7 @@ const Login = () => {
                                     inputType={'numeric'}
                                     maxLength={4}
                                     placeholder={`Enter your 6-digit OTP received on ${phoneNumber}`}
-                                    labelColorActive={isDark ? '#9ef0ff' : '#9eb1ff'}
-                                />)}
+                                    labelColorActive={isDark ? '#002127' : '#9efffc'}                                />)}
                             </View>
                             <TouchableOpacity
                                 style={[

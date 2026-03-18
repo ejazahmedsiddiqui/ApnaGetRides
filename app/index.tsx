@@ -22,14 +22,6 @@ export default function Index() {
     const styles = useMemo(() =>
         createStyles(theme, isDark), [theme, isDark]);
     const {isAuthenticated, isLoading} = useUser();
-
-    useEffect(() => {
-        if (!isAuthenticated) {
-            console.log('Not Authenticated')
-        } else {
-            console.log('Authenticated')
-        }
-    }, [isAuthenticated]);
     const quickDestinations = [
         {id: '1', label: 'Home', icon: '🏠'},
         {id: '2', label: 'Work', icon: '💼'},

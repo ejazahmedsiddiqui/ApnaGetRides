@@ -19,7 +19,7 @@ const Footer = () => {
     const styles = useMemo(() => createStyles(theme), [theme]);
     const pathname = usePathname();
     const { isAuthenticated } = useUser();
-    console.log(isAuthenticated);
+
     const isActive = (route: string): boolean => {
         if (route === '/') {
             return pathname === '/';

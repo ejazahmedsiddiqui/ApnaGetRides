@@ -14,9 +14,9 @@ const Profile = () => {
     const [tabs, setTabs] = useState<'details' | 'security'>('details');
     const {isAuthenticated, isLoading,} = useUser();
     //
-    // useEffect(() => {
-    //     if (!isAuthenticated) router.replace('/Login')
-    // }, [isAuthenticated]);
+    useEffect(() => {
+        if (!isAuthenticated) router.replace('/Login')
+    }, [isAuthenticated]);
 
     if (isLoading) {
         return (
