@@ -1,33 +1,26 @@
-import {useState, useEffect} from "react";
-import {heroList} from "@/api/hero";
+import { useQuery } from "@tanstack/react-query";
+import { heroList } from "@/api/hero";
 
-export const useHeroList = () => {
-        const [data, setData] = useState([]);
-        const [loading, setLoading] = useState(false);
-        const [error, setError] = useState<Error | null>(null);
+type SliderType = "home" | "promo" | "banner" | "services";
 
-        const getHeroList = async () => {
-            setLoading(true);
-            setError(null);
+const useAllSliders = () =>
+    useQuery({
+        queryKey: ["heroList"],
+        queryFn: heroList,
+    });
 
-            try {
-                const res = await heroList();
-                setData(res.data)
-            } catch (err) {
-                if (err instanceof Error) {
-                    setError(err);
-                } else {
-                    setError(new Error("An unknown error occurred"));
-                }
-            } finally {
-                setLoading(false);
-            }
-        };
+export const useHeroList = (sliderType: SliderType) => {
+    const { data, isLoading, error, refetch } = useAllSliders();
 
-        useEffect(() => {
-            getHeroList();
-        }, []);
+    return {
+        data: (data ?? []).filter((item: any) => item.sliderType === sliderType),
+        loading: isLoading,
+        error,
+        getHeroList: refetch,
+    };
+};
 
-        return {data, getHeroList, loading, error};
-    }
-;
+export const useHomeSlider     = () => useHeroList("home");
+export const usePromoSlider    = () => useHeroList("promo");
+export const useBannerSlider   = () => useHeroList("banner");
+export const useServicesSlider = () => useHeroList("services");

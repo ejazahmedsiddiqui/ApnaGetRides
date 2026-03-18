@@ -7,7 +7,7 @@ import {
     View,
 } from "react-native";
 import {useTheme} from "react-native-zustand-theme";
-import {useMemo} from "react";
+import {useEffect, useMemo} from "react";
 import {Pen} from "lucide-react-native";
 import Animated, {
  SlideInLeft, SlideOutRight
@@ -16,6 +16,7 @@ import {router} from "expo-router";
 import {GestureDetector, Gesture} from 'react-native-gesture-handler'
 import {scheduleOnRN} from 'react-native-worklets';
 import {useUser} from "@/context/UserContext";
+import {error} from "@expo/fingerprint/cli/build/utils/log";
 
 type Tab = "details" | "security";
 
@@ -23,14 +24,6 @@ interface ProfileHeaderProps {
     activeTab: Tab;
     onTabChange: (tab: Tab) => void;
 }
-
-const USER = {
-    name: "Jordan Avery",
-    gender: "Female",
-    email: "jordan.avery@example.com",
-    phone: "+1 (555) 012-3456",
-    avatarUri: "https://i.pravatar.cc/200?img=47",
-};
 
 const Field = ({
                    label,
@@ -54,7 +47,12 @@ const Field = ({
 const PersonalDetails = ({activeTab, onTabChange}: ProfileHeaderProps) => {
     const {theme} = useTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
-    const {profilePicture, fullName, email, gender, phone} = useUser();
+    const { isAuthenticated, profilePicture, fullName, email, gender, phone, isLoading, logout, message } = useUser();
+
+    useEffect(() => {
+        if(!isAuthenticated)
+            router.replace('/Login')
+    }, [isAuthenticated]);
 
     const swipeGesture = Gesture.Pan()
         .onEnd((event) => {
@@ -67,7 +65,12 @@ const PersonalDetails = ({activeTab, onTabChange}: ProfileHeaderProps) => {
         <View
             style={styles.safeArea}
         >
-            <GestureDetector gesture={swipeGesture}>
+            {isLoading &&
+                <View>
+
+                </View>
+            }
+            {!isLoading && <GestureDetector gesture={swipeGesture}>
                 <Animated.View
                     key="details"
                     style={{flex: 1, overflow: 'hidden'}}
@@ -82,7 +85,9 @@ const PersonalDetails = ({activeTab, onTabChange}: ProfileHeaderProps) => {
                         {/* Avatar section */}
                         <View style={styles.avatarSection}>
                             <View style={styles.avatarWrapper}>
-                                <Image source={{uri: USER.avatarUri}} style={styles.avatar}/>
+                                <Image
+                                    source={{uri: profilePicture || 'https://img.freepik.com/free-vector/user-circles-set_78370-4704.jpg?ga=GA1.1.1874108308.1765959492&semt=ais_hybrid&w=740&q=80'}}
+                                    style={styles.avatar}/>
                                 <TouchableOpacity style={styles.avatarBadge} activeOpacity={0.7}>
                                     <Pen size={20} color={theme.colors.textPrimary} style={{
                                         transform: [
@@ -91,59 +96,66 @@ const PersonalDetails = ({activeTab, onTabChange}: ProfileHeaderProps) => {
                                     }}/>
                                 </TouchableOpacity>
                             </View>
-                            <Text style={styles.avatarName}>{USER.name}</Text>
+                            <Text style={styles.avatarName}>{fullName}</Text>
                             <Text style={styles.avatarSub}>Tap the icon to change your photo</Text>
                         </View>
 
                         {/* Fields */}
                         <View style={styles.card}>
                             <View
-                             style={{
-                                 justifyContent: 'space-between',
-                                 alignItems: 'center',
-                                 flexDirection: 'row'
-                             }}
+                                style={{
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    flexDirection: 'row'
+                                }}
                             >
 
-                            <Text style={styles.sectionLabel}>PROFILE INFO</Text>
-                            <TouchableOpacity onPress={() => router.push({
-                                pathname: '/ProfileEdit',
-                                params: USER
-                            })} activeOpacity={0.6} style={styles.editBtn}>
-                                <Text style={styles.editBtnText}>Edit</Text>
-                            </TouchableOpacity>
+                                <Text style={styles.sectionLabel}>PROFILE INFO</Text>
+                                <TouchableOpacity onPress={() => router.push({
+                                    pathname: '/ProfileEdit',
+                                    params: {}
+                                })} activeOpacity={0.6} style={styles.editBtn}>
+                                    <Text style={styles.editBtnText}>Edit</Text>
+                                </TouchableOpacity>
                             </View>
                             <Field
                                 label="Full Name"
-                                value={USER.name}
+                                value={fullName ?? 'Not available'}
                                 styles={styles}
 
                             />
                             <View style={styles.separator}/>
                             <Field
                                 label="Gender"
-                                value={USER.gender}
+                                value={gender ?? 'Not available'}
                                 styles={styles}
 
                             />
                             <View style={styles.separator}/>
                             <Field
                                 label="Email Address"
-                                value={USER.email}
+                                value={email ?? 'Not available'}
                                 styles={styles}
 
                             />
                             <View style={styles.separator}/>
                             <Field
                                 label="Phone Number"
-                                value={USER.phone}
+                                value={phone ?? 'Not available'}
                                 styles={styles}
 
                             />
+                            <TouchableOpacity
+                                style={styles.logoutButton}
+                                onPress={logout}
+                            >
+                                <Text>Logout</Text>
+                            </TouchableOpacity>
                         </View>
+
                     </ScrollView>
                 </Animated.View>
-            </GestureDetector>
+            </GestureDetector>}
         </View>
     );
 };
@@ -259,4 +271,9 @@ const createStyles = (theme: any) =>
             backgroundColor: '#b58df1',
             borderRadius: 500,
         },
+        logoutButton: {
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            marginTop: 12,
+        }
     });
