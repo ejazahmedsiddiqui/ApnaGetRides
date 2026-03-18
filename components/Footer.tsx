@@ -32,7 +32,7 @@ const Footer = () => {
     };
 
     // Hide login link if authenticated
-    const visibleLinks = !isAuthenticated
+    const visibleLinks = isAuthenticated
         ? links.filter(link => link.id !== 'login')
         : links.filter(link => link.id !== 'profile');
 

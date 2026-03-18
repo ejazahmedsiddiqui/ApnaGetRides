@@ -1,38 +1,35 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import {createMMKV} from "react-native-mmkv";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import { createMMKV } from "react-native-mmkv";
 import * as SecureStore from "expo-secure-store";
-import {getUserProfile} from "@/api";
+import { getUserProfile, userLoginVerifyOtp } from "@/api/auth";
 
-const storage = createMMKV({ id: 'user-storage'})
+const storage = createMMKV({ id: 'user-storage' });
 
 // Types
 interface UserState {
     phone: string | null;
-    token: string | null;
     gender: string | null;
     email: string | null;
     fullName: string | null;
     profilePicture: string | null;
     isAuthenticated: boolean;
-    isLoading: boolean;
+}
+
+interface LoginResult {
+    success: boolean;
+    error?: any;
+    errorMessage?: string;
+    errorStatus?: number;
 }
 
 interface UserContextType extends UserState {
-    login: (phone: string, token: string) => Promise<{ success: boolean; data: string }>;
-    logout: () => Promise<{ success: boolean }>;
-    updateToken: (newToken: string) => Promise<void>;
-    getProfile: (token: string) => Promise<void>;
-    updateProfile: (profile: Partial<Pick<UserState, "gender" | "email" | "fullName" | "profilePicture">>) => Promise<void>;
+    login: (phone: string, otp: string) => Promise<LoginResult>;
+    logout: () => Promise<void>;
+    refreshProfile: () => Promise<void>;
+    isLoading: boolean,
+    message: string
 }
-
-interface UserProviderProps {
-    children: ReactNode;
-}
-
-const SECURE_KEYS = {
-    TOKEN: "userToken",
-} as const;
-
+const SECURE_KEYS = { TOKEN: "userToken" } as const;
 const STORAGE_KEYS = {
     PHONE: "userPhone",
     GENDER: "userGender",
@@ -41,168 +38,131 @@ const STORAGE_KEYS = {
     PROFILE_PICTURE: "userProfilePicture",
 } as const;
 
-const secureGet = (key: string): Promise<string | null> => SecureStore.getItemAsync(key);
-const secureSet = (key: string, value: string): Promise<void> => SecureStore.setItemAsync(key, value);
-const secureDelete = (key: string): Promise<void> => SecureStore.deleteItemAsync(key);
-
-const mmkvGet = (key: string): string | null => storage.getString(key) ?? null;
-const mmkvSet = (key: string, value: string): void => storage.set(key, value);
-const mmkvDelete = (key: string): boolean => storage.remove(key);
-
-// Context
 const UserContext = createContext<UserContextType | null>(null);
 
-export const UserProvider = ({ children }: UserProviderProps) => {
+export const UserProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<UserState>({
         phone: null,
-        token: null,
         gender: null,
         email: null,
         fullName: null,
         profilePicture: null,
         isAuthenticated: false,
-        isLoading: true,
     });
 
-    useEffect(() => {
-        loadUserData();
-    }, []);
+    const [message, setMessage] = useState<string>('');
+    const [isLoading, setIsLoading] = useState<boolean>(false);
 
-    const loadUserData = async (): Promise<void> => {
+    // 1. Initial Load Logic
+    const loadStorageData = useCallback(async () => {
+        setMessage('Loading User Data...');
+        setIsLoading(true)
         try {
-            const token = await secureGet(SECURE_KEYS.TOKEN);
-            const phone = mmkvGet(STORAGE_KEYS.PHONE);
+            const token = await SecureStore.getItemAsync(SECURE_KEYS.TOKEN);
+            const phone = storage.getString(STORAGE_KEYS.PHONE);
 
-            if (phone && token) {
+            if (token && phone) {
                 setUser({
                     phone,
-                    token,
-                    gender: mmkvGet(STORAGE_KEYS.GENDER),
-                    email: mmkvGet(STORAGE_KEYS.EMAIL),
-                    fullName: mmkvGet(STORAGE_KEYS.FULL_NAME),
-                    profilePicture: mmkvGet(STORAGE_KEYS.PROFILE_PICTURE),
+                    gender: storage.getString(STORAGE_KEYS.GENDER) ?? null,
+                    email: storage.getString(STORAGE_KEYS.EMAIL) ?? null,
+                    fullName: storage.getString(STORAGE_KEYS.FULL_NAME) ?? null,
+                    profilePicture: storage.getString(STORAGE_KEYS.PROFILE_PICTURE) ?? null,
                     isAuthenticated: true,
-                    isLoading: false,
                 });
             } else {
-                setUser((prev) => ({ ...prev, isLoading: false }));
+                setUser(prev => ({ ...prev, isAuthenticated: false, }));
             }
-        } catch (error) {
-            console.error("Error loading user data:", error);
-            setUser((prev) => ({ ...prev, isLoading: false }));
+        } catch (e) {
+            setUser(prev => ({ ...prev, isAuthenticated: false}));
+        } finally {
+            setMessage('');
+            setIsLoading(false)
         }
-    };
+    }, []);
 
-    const login =
-        async (phone: string, token: string): Promise<{ success: boolean; data: string }> =>
-        {
-        try {
-            await secureSet(SECURE_KEYS.TOKEN, token);
-            mmkvSet(STORAGE_KEYS.PHONE, phone);
-            await getProfile()
-                .then(() => console.log('Get Profile called successfully'))
-                .catch((e) => console.error(e));
-            return { success: true, data: token };
-        } catch (error) {
-            console.error("Error saving user data:", error);
-            throw error;
-        }
-    };
+    useEffect(() => {
+        loadStorageData();
+    }, [loadStorageData]);
 
-    const logout = async (): Promise<{ success: boolean }> => {
+    // Login Workflow: Verify OTP -> Save Token -> Fetch Profile -> Save Profile
+    const login = async (phone: string, otp: string) => {
+        setIsLoading(true)
         try {
-            await secureDelete(SECURE_KEYS.TOKEN);
-            Object.values(STORAGE_KEYS).forEach(mmkvDelete);
-            setUser({
-                phone: null,
-                token: null,
-                gender: null,
-                email: null,
-                fullName: null,
-                profilePicture: null,
-                isAuthenticated: false,
-                isLoading: false,
-            });
-            return { success: true };
-        } catch (error) {
-            console.error("Error clearing user data:", error);
-            throw error;
-        }
-    };
+            setMessage('Verifying OTP');
+            const authResult = await userLoginVerifyOtp(phone, otp);
 
-    const updateToken = async (newToken: string): Promise<void> => {
-        try {
-            await secureSet(SECURE_KEYS.TOKEN, newToken);
-            setUser((prev) => ({ ...prev, token: newToken }));
-        } catch (error) {
-            console.error("Error updating token:", error);
-            throw error;
-        }
-    };
+            if (!authResult.success) return { success: false, errorMessage: authResult.errorMessage, errorStatus: authResult.errorStatus };
 
-    const getProfile = async () => {
-        console.log('@/context/UserContext/getProfile Accessed');
-        const token = await secureGet(SECURE_KEYS.TOKEN);
-        console.log('Access Token is: ',token);
-        try {
-            const result = await getUserProfile(token);
-            if(result.success) {
-                console.log('get profile success, result Data is: ', result.data);
+            const token = authResult.data.access_token; // Assuming your API returns { token: "..." }
+            await SecureStore.setItemAsync(SECURE_KEYS.TOKEN, token);
+            storage.set(STORAGE_KEYS.PHONE, phone);
+
+            // Fetch profile immediately after token is secured
+            setMessage('Fetching Profile');
+            const profileResult = await getUserProfile(token);
+            if (profileResult.success) {
+                const p = profileResult.data;
+
+                // Save to MMKV
+                if (p.gender) storage.set(STORAGE_KEYS.GENDER, p.gender);
+                if (p.email) storage.set(STORAGE_KEYS.EMAIL, p.email);
+                if (p.name) storage.set(STORAGE_KEYS.FULL_NAME, p.name);
+                if (p.profilePicture) storage.set(STORAGE_KEYS.PROFILE_PICTURE, p.profilePicture);
+
+                setUser({
+                    phone,
+                    gender: p.gender || null,
+                    email: p.email || null,
+                    fullName: p.name || null,
+                    profilePicture: p.profilePicture || null,
+                    isAuthenticated: true,
+                });
+                return { success: true };
             }
+            return { success: false, error: "Failed to fetch profile" };
         } catch (error) {
-            console.error("Error clearing user data:", error);
-            throw error;
-        }
-    }
-    const updateProfile = async (
-        profile: Partial<Pick<UserState, "gender" | "email" | "fullName" | "profilePicture">>
-    ): Promise<void> => {
-        try {
-            const storageMap: Record<string, string> = {
-                gender: STORAGE_KEYS.GENDER,
-                email: STORAGE_KEYS.EMAIL,
-                fullName: STORAGE_KEYS.FULL_NAME,
-                profilePicture: STORAGE_KEYS.PROFILE_PICTURE,
-            };
-
-            Object.entries(profile).forEach(([key, value]) => {
-                if (value != null) {
-                    mmkvSet(storageMap[key], value as string);
-                }
-            });
-
-            setUser((prev) => ({ ...prev, ...profile }));
-        } catch (error) {
-            console.error("Error updating profile:", error);
-            throw error;
+            console.error("Login Error:", error);
+            return { success: false, error };
+        } finally {
+            setIsLoading(false)
+            setMessage('')
         }
     };
 
-    const value: UserContextType = {
-        phone: user.phone,
-        token: user.token,
-        gender: user.gender,
-        email: user.email,
-        fullName: user.fullName,
-        profilePicture: user.profilePicture,
-        isAuthenticated: user.isAuthenticated,
-        isLoading: user.isLoading,
-        login,
-        logout,
-        updateToken,
-        getProfile,
-        updateProfile,
+    const logout = async () => {
+        setIsLoading(true)
+        await SecureStore.deleteItemAsync(SECURE_KEYS.TOKEN);
+        storage.clearAll();
+        setUser({
+            phone: null,
+            gender: null,
+            email: null,
+            fullName: null,
+            profilePicture: null,
+            isAuthenticated: false,
+        });
+        setIsLoading(false)
     };
 
-    return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
+    const refreshProfile = async () => {
+        const token = await SecureStore.getItemAsync(SECURE_KEYS.TOKEN);
+        if (!token) return;
+        const res = await getUserProfile(token);
+        if (res.success) {
+            // Update state and storage logic here...
+        }
+    };
+
+    return (
+        <UserContext.Provider value={{ ...user, login, logout, refreshProfile, isLoading, message }}>
+            {children}
+        </UserContext.Provider>
+    );
 };
 
-export const useUser = (): UserContextType => {
+export const useUser = () => {
     const context = useContext(UserContext);
-    if (!context) {
-        throw new Error("useUser must be used within a UserProvider");
-    }
+    if (!context) throw new Error("useUser must be used within a UserProvider");
     return context;
 };
-
-export default UserContext;

@@ -1,17 +1,27 @@
-import {Text, View, StyleSheet, TouchableOpacity, ScrollView, StatusBar, FlatList} from "react-native";
+import {
+    Text,
+    View,
+    StyleSheet,
+    TouchableOpacity,
+    ScrollView,
+    StatusBar, ActivityIndicator,
+} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {Search, MapPin, Clock, ChevronRight} from "lucide-react-native";
 import {useTheme} from "react-native-zustand-theme";
-import React, {useMemo} from "react";
+import React, {useEffect, useMemo} from "react";
 import {router} from "expo-router";
 import './ReactotronConfig';
 import HeroCarousels from "@/components/HeroCarousels";
+import {BannerCarousel} from "@/components/BannerCarousel";
+import {useUser} from "@/context/UserContext";
+
 
 export default function Index() {
     const {theme, toggleMode, isDark} = useTheme();
     const styles = useMemo(() =>
         createStyles(theme, isDark), [theme, isDark]);
-
+    const {isAuthenticated, isLoading} = useUser();
     const quickDestinations = [
         {id: '1', label: 'Home', icon: '🏠'},
         {id: '2', label: 'Work', icon: '💼'},
@@ -24,6 +34,20 @@ export default function Index() {
         {id: '3', emoji: '🍔', label: 'Eats'},
         {id: '4', emoji: '🛵', label: 'Auto'},
     ];
+    if (isLoading) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={{
+                    flex: 1,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+
+                }}>
+                    <ActivityIndicator size={32} color={theme.colors.textSecondary}/>
+                </View>
+            </SafeAreaView>
+        )
+    }
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'}/>
@@ -75,11 +99,9 @@ export default function Index() {
                         </TouchableOpacity>
                     ))}
                 </View>
-
-                {/* ── Hero Carousel ── */}
-                <Text style={styles.sectionLabel}>Offers & Promotions</Text>
                 <HeroCarousels/>
 
+                <BannerCarousel/>
                 {/* ── Recent Trips ── */}
                 <View style={styles.recentSection}>
                     <View style={styles.sectionRow}>
@@ -112,18 +134,20 @@ export default function Index() {
                 </TouchableOpacity>
 
                 {/* ── Auth Buttons ── */}
-                <View style={styles.authRow}>
-                    <TouchableOpacity
-                        onPress={() => router.push('/Login')}
-                        style={[styles.authButton, styles.authOutline]}>
-                        <Text style={[styles.authButtonText, styles.authOutlineText]}>Log in</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={() => router.push('/Profile')}
-                        style={[styles.authButton, styles.authFill]}>
-                        <Text style={[styles.authButtonText, styles.authFillText]}>Sign up</Text>
-                    </TouchableOpacity>
-                </View>
+                {!isAuthenticated &&
+                    <View style={styles.authRow}>
+                        <TouchableOpacity
+                            onPress={() => router.push('/Login')}
+                            style={[styles.authButton, styles.authOutline]}>
+                            <Text style={[styles.authButtonText, styles.authOutlineText]}>Log in</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => router.push('/Profile')}
+                            style={[styles.authButton, styles.authFill]}>
+                            <Text style={[styles.authButtonText, styles.authFillText]}>Sign up</Text>
+                        </TouchableOpacity>
+                    </View>
+                }
             </ScrollView>
         </SafeAreaView>
     );
@@ -234,7 +258,10 @@ const createStyles = (theme: any, isDark: boolean) =>
             marginBottom: 14,
             letterSpacing: -0.2,
         },
-
+        activityStyle: {
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
         /* Services */
         servicesRow: {
             flexDirection: 'row',
