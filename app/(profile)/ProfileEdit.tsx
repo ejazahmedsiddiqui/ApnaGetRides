@@ -40,6 +40,7 @@ const ProfileEdit = () => {
     const [avatarUri] = useState(params.avatarUri ?? "");
     const [genderOpen, setGenderOpen] = useState(false);
 
+    console.log('@/app/profile/ProfileEdit Accessed.');
     const handleSave = () => {
         if (!name.trim()) {
             Alert.alert("Validation", "Full name cannot be empty.");

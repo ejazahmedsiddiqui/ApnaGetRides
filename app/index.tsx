@@ -15,6 +15,7 @@ import './ReactotronConfig';
 import HeroCarousels from "@/components/HeroCarousels";
 import {BannerCarousel} from "@/components/BannerCarousel";
 import {useUser} from "@/context/UserContext";
+import {PromoCarousel} from "@/components/PromoCarousel";
 
 
 export default function Index() {
@@ -22,6 +23,7 @@ export default function Index() {
     const styles = useMemo(() =>
         createStyles(theme, isDark), [theme, isDark]);
     const {isAuthenticated, isLoading} = useUser();
+    console.log('@/app/index Accessed.');
     const quickDestinations = [
         {id: '1', label: 'Home', icon: '🏠'},
         {id: '2', label: 'Work', icon: '💼'},
@@ -100,7 +102,7 @@ export default function Index() {
                     ))}
                 </View>
                 <HeroCarousels/>
-
+                <PromoCarousel />
                 <BannerCarousel/>
                 {/* ── Recent Trips ── */}
                 <View style={styles.recentSection}>

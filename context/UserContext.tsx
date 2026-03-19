@@ -53,6 +53,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     const [message, setMessage] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
+    console.log('@/context/UserContext Accessed.');
     // 1. Initial Load Logic
     const loadStorageData = useCallback(async () => {
         setMessage('Loading User Data...');
@@ -86,54 +87,61 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }, [loadStorageData]);
 
     // Login Workflow: Verify OTP -> Save Token -> Fetch Profile -> Save Profile
-    const login = async (phone: string, otp: string) => {
-        setIsLoading(true)
+    const login = async (phone: string, otp: string): Promise<LoginResult> => {
+        setIsLoading(true);
         try {
             setMessage('Verifying OTP');
             const authResult = await userLoginVerifyOtp(phone, otp);
 
-            if (!authResult.success) return { success: false, errorMessage: authResult.errorMessage, errorStatus: authResult.errorStatus };
+            if (!authResult.success) {
+                console.log('authResult : ', authResult);
+                return { success: false, errorMessage: authResult.errorMessage, errorStatus: authResult.errorStatus };
+            }
 
-            const token = authResult.data.access_token; // Assuming your API returns { token: "..." }
+            console.log('Accessed authResult.success page');
+            const token = authResult.data.access_token;
             await SecureStore.setItemAsync(SECURE_KEYS.TOKEN, token);
             storage.set(STORAGE_KEYS.PHONE, phone);
 
             // Fetch profile immediately after token is secured
             setMessage('Fetching Profile');
             const profileResult = await getUserProfile(token);
-            if (profileResult.success) {
-                const p = profileResult.data;
-
-                // Save to MMKV
-                if (p.gender) storage.set(STORAGE_KEYS.GENDER, p.gender);
-                if (p.email) storage.set(STORAGE_KEYS.EMAIL, p.email);
-                if (p.name) storage.set(STORAGE_KEYS.FULL_NAME, p.name);
-                if (p.profilePicture) storage.set(STORAGE_KEYS.PROFILE_PICTURE, p.profilePicture);
-
-                setUser({
-                    phone,
-                    gender: p.gender || null,
-                    email: p.email || null,
-                    fullName: p.name || null,
-                    profilePicture: p.profilePicture || null,
-                    isAuthenticated: true,
-                });
-                return { success: true };
+            if (!profileResult.success) {
+                return { success: false, errorMessage: "Failed to fetch profile" };
             }
-            return { success: false, error: "Failed to fetch profile" };
+
+            const p = profileResult.data;
+
+            // Save to MMKV
+            if (p.gender) storage.set(STORAGE_KEYS.GENDER, p.gender);
+            if (p.email) storage.set(STORAGE_KEYS.EMAIL, p.email);
+            if (p.name) storage.set(STORAGE_KEYS.FULL_NAME, p.name);
+            if (p.profilePicture) storage.set(STORAGE_KEYS.PROFILE_PICTURE, p.profilePicture);
+
+            setUser({
+                phone,
+                gender: p.gender || null,
+                email: p.email || null,
+                fullName: p.name || null,
+                profilePicture: p.profilePicture || null,
+                isAuthenticated: true,
+            });
+            return { success: true };
         } catch (error) {
             console.error("Login Error:", error);
             return { success: false, error };
         } finally {
-            setIsLoading(false)
-            setMessage('')
+            setIsLoading(false);
+            setMessage('');
         }
     };
 
     const logout = async () => {
-        setIsLoading(true)
+        setIsLoading(true);
+        setMessage('Logging Out...');
         await SecureStore.deleteItemAsync(SECURE_KEYS.TOKEN);
         storage.clearAll();
+        setMessage('Cleared Credentials...');
         setUser({
             phone: null,
             gender: null,
@@ -142,6 +150,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
             profilePicture: null,
             isAuthenticated: false,
         });
+        setMessage('')
         setIsLoading(false)
     };
 

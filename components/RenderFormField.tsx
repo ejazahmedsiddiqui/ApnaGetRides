@@ -8,6 +8,8 @@ interface RenderFormFieldProps {
     label?: string;
     labelColor?: string;
     labelColorActive?: string;
+    borderColorInactive?: string;
+    borderColorActive?: string;
     value: string;
     onChangeText: (text: string) => void;
     placeholder?: string;
@@ -30,6 +32,8 @@ const RenderFormField = ({
                              label,
                              labelColor = '#fff',
                              labelColorActive = '#5B5FED',
+    borderColorInactive = '#e0e0e0',
+    borderColorActive = '#5B5FED',
                              value,
                              onChangeText,
                              placeholder,
@@ -63,7 +67,7 @@ const RenderFormField = ({
 
     const borderColor = focusAnim.interpolate({
         inputRange: [0, 1],
-        outputRange: ['#e0e0e0', '#5B5FED'],
+        outputRange: [borderColorInactive, borderColorActive],
     });
 
     const activeLabelColor = isFocused || value ? labelColorActive : labelColor;
