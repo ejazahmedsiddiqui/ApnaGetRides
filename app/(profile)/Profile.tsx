@@ -14,6 +14,7 @@ const Profile = () => {
     const [tabs, setTabs] = useState<'details' | 'security'>('details');
     const {isAuthenticated, isLoading,} = useUser();
     //
+    console.log('@/app/profile/Profile Accessed.');
     useEffect(() => {
         if (!isAuthenticated) router.replace('/Login')
     }, [isAuthenticated]);

@@ -54,6 +54,7 @@ const SearchPage = () => {
 
     const snapPoints = useMemo(() => ['15%', '45%', '90%'], [])
 
+    console.log('@/app/map/SearchPage Accessed.');
     const recenterMap = useCallback(() => {
         console.log('recenterMap');
         if (!userLocation) return

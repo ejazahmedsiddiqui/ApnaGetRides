@@ -1,4 +1,5 @@
 import {
+    ActivityIndicator,
     Image,
     ScrollView,
     StyleSheet,
@@ -10,13 +11,12 @@ import {useTheme} from "react-native-zustand-theme";
 import {useEffect, useMemo} from "react";
 import {Pen} from "lucide-react-native";
 import Animated, {
- SlideInLeft, SlideOutRight
+    SlideInLeft, SlideOutRight
 } from 'react-native-reanimated';
 import {router} from "expo-router";
 import {GestureDetector, Gesture} from 'react-native-gesture-handler'
 import {scheduleOnRN} from 'react-native-worklets';
 import {useUser} from "@/context/UserContext";
-import {error} from "@expo/fingerprint/cli/build/utils/log";
 
 type Tab = "details" | "security";
 
@@ -47,10 +47,10 @@ const Field = ({
 const PersonalDetails = ({activeTab, onTabChange}: ProfileHeaderProps) => {
     const {theme} = useTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
-    const { isAuthenticated, profilePicture, fullName, email, gender, phone, isLoading, logout, message } = useUser();
+    const {isAuthenticated, profilePicture, fullName, email, gender, phone, isLoading, logout, message} = useUser();
 
     useEffect(() => {
-        if(!isAuthenticated)
+        if (!isAuthenticated)
             router.replace('/Login')
     }, [isAuthenticated]);
 
@@ -61,15 +61,21 @@ const PersonalDetails = ({activeTab, onTabChange}: ProfileHeaderProps) => {
             }
         })
 
+    if (isLoading) {
+        return (
+
+            <View style={styles.safeArea}>
+                <ActivityIndicator size={'large'} color={theme.colors.textSecondary}/>
+                { message &&
+                <Text style={styles.sectionLabel}>{message}</Text>}
+            </View>
+
+        )
+    }
     return (
         <View
             style={styles.safeArea}
         >
-            {isLoading &&
-                <View>
-
-                </View>
-            }
             {!isLoading && <GestureDetector gesture={swipeGesture}>
                 <Animated.View
                     key="details"
@@ -79,7 +85,6 @@ const PersonalDetails = ({activeTab, onTabChange}: ProfileHeaderProps) => {
                 >
                     <ScrollView
                         style={styles.scroll}
-                        contentContainerStyle={styles.content}
                         showsVerticalScrollIndicator={false}
                     >
                         {/* Avatar section */}
@@ -149,7 +154,7 @@ const PersonalDetails = ({activeTab, onTabChange}: ProfileHeaderProps) => {
                                 style={styles.logoutButton}
                                 onPress={logout}
                             >
-                                <Text>Logout</Text>
+                                <Text style={styles.logoutButtonText}>Logout</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -171,9 +176,7 @@ const createStyles = (theme: any) =>
         scroll: {
             flex: 1,
         },
-        content: {
-            paddingBottom: 40,
-        },
+
 
         // Avatar
         avatarSection: {
@@ -222,7 +225,6 @@ const createStyles = (theme: any) =>
 
         // Card / fields
         card: {
-            backgroundColor: theme.colors.card,
             paddingHorizontal: 20,
             paddingVertical: 20,
         },
@@ -272,8 +274,16 @@ const createStyles = (theme: any) =>
             borderRadius: 500,
         },
         logoutButton: {
+            backgroundColor: theme.colors.surface,
             paddingHorizontal: 16,
             paddingVertical: 12,
-            marginTop: 12,
+            marginVertical: 12,
+            width: '40%',
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        logoutButtonText: {
+            color: theme.colors.textPrimary,
+            fontSize: 16,
         }
     });

@@ -63,10 +63,10 @@ export default function HeroCarousels() {
                             source={{uri: item.image}}
                             style={styles.cardImage}
                             resizeMode="cover"
-                            onLoad={() => {
-                                console.log('✅ Image loaded:', item?.title);
-                                console.log('item is : ', item?._id)
-                            }}
+                            // onLoad={() => {
+                            //     console.log('✅ Image loaded:', item?.title);
+                            //     console.log('item is : ', item?._id)
+                            // }}
                             onError={(e) => console.log('❌ Image failed:', item.image, e.nativeEvent.error)}
                         />
                     </View>

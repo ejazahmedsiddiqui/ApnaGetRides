@@ -18,7 +18,7 @@ const Login = () => {
     const [errors, setErrors] = useState([]);
     const {theme, isDark} = useTheme();
 
-    const {login, isLoading, message, isAuthenticated} = useUser();
+    const {login, isLoading, message} = useUser();
     const {loading, getOtp, error} = useOtpLogin();
     const styles = useMemo(() => createStyles(theme), [theme]);
 
@@ -32,10 +32,7 @@ const Login = () => {
         return () => clearInterval(interval);
     }, [resendTimer]);
 
-    useEffect(() => {
-        if(isAuthenticated)
-            router.replace('/Profile')
-    }, [isAuthenticated]);
+
 
 
     const handleLoginButtonPress = async () => {
@@ -60,14 +57,14 @@ const Login = () => {
                     return;
                 }
 
-                // 3. Use the Context Login to handle verification and profile fetching
-                const result: { success: boolean; error?: any; errorMessage?: string; errorStatus?: number } = await login(phoneNumber, otp);
+                const result = await login(phoneNumber, otp);
 
-                if (result.success) {
-                    // Navigate home - UserContext now holds the profile and token
-                    router.replace('/');
-                } else {
+                if (!result.success) {
                     Alert.alert('Login Failed', result.errorMessage || 'An error occurred');
+                    setStep(1);
+                    return;
+                } else {
+                    router.replace('/');
                 }
                 break;
 
@@ -122,7 +119,10 @@ const Login = () => {
                                     inputType={'numeric'}
                                     maxLength={10}
                                     placeholder={'Enter your 10-digit phone number'}
-                                    labelColorActive={isDark ? '#00859e' : '#9efffc'}
+                                    labelColor={theme.colors.textSecondary}
+                                    labelColorActive={theme.colors.textPrimary}
+                                    borderColorInactive={theme.colors.border}
+                                    borderColorActive={theme.colors.textSecondary}
                                 />)}
                                 {step === 1 && !loading && (<RenderFormField
                                     label={'Enter your OTP'}
@@ -131,7 +131,10 @@ const Login = () => {
                                     inputType={'numeric'}
                                     maxLength={4}
                                     placeholder={`Enter your 6-digit OTP received on ${phoneNumber}`}
-                                    labelColorActive={isDark ? '#002127' : '#9efffc'}                                />)}
+                                    labelColor={theme.colors.textSecondary}
+                                    labelColorActive={theme.colors.textPrimary}
+                                    borderColorInactive={theme.colors.border}
+                                    borderColorActive={theme.colors.textSecondary}                              />)}
                             </View>
                             <TouchableOpacity
                                 style={[
@@ -182,7 +185,7 @@ const Login = () => {
                             justifyContent: 'flex-start',
                             alignItems: 'center'
                         }}>
-                            <ActivityIndicator size={50} color={theme.colors.textPrimary}/>
+                            <ActivityIndicator size={32} color={theme.colors.textPrimary}/>
                             {message && <Text style={styles.resendLink}>{message}</Text>}
                         </View>
                     </SafeAreaView>}
@@ -285,6 +288,7 @@ const createStyles = (theme: any) => StyleSheet.create({
         color: '#3998ff'
     },
     resendLink: {
+        marginTop: 12,
         fontSize: 12,
         color: '#3998ff',
     },
