@@ -7,6 +7,7 @@ import {usePromoSlider} from "../hooks/useHeroList";
 const {width: SCREEN_WIDTH} = Dimensions.get("window");
 
 const CARD_WIDTH = SCREEN_WIDTH * 0.75;
+const CARD_HEIGHT = 180;
 
 const BannerCard = ({item}) => {
     const {theme} = useTheme();
@@ -28,7 +29,7 @@ const BannerCard = ({item}) => {
 }
 
 export const PromoCarousel = () => {
-    const {data, loading} = usePromoSlider();
+    const {data, loading, error} = usePromoSlider();
     const {theme} = useTheme();
     const styles = useMemo(() =>
         createStyles(theme), [theme]);
@@ -36,7 +37,13 @@ export const PromoCarousel = () => {
     const sliderData = data?.[0];           // the banner slider object
     const items = sliderData?.items ?? [];  // the actual array of cards
 
-    if (loading) return <ActivityIndicator size={24} colors={theme.colors.textPrimary} /> ;
+    if (loading && !error) {
+        return (
+            <View style={styles.loaderContainer}>
+                <ActivityIndicator size="small" color={theme.colors.textPrimary}/>
+            </View>
+        );
+    }
     if (!items.length) return null;
 
     return (
@@ -60,6 +67,11 @@ export const PromoCarousel = () => {
 };
 
 const createStyles = (theme) => StyleSheet.create({
+    loaderContainer: {
+        height: CARD_HEIGHT,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     sectionLabel: {
         alignSelf: 'flex-start',
         fontSize: 17,

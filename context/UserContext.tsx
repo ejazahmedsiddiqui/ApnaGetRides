@@ -29,6 +29,7 @@ interface UserContextType extends UserState {
     isLoading: boolean,
     message: string
 }
+
 const SECURE_KEYS = { TOKEN: "userToken" } as const;
 const STORAGE_KEYS = {
     PHONE: "userPhone",
@@ -54,10 +55,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
     console.log('@/context/UserContext Accessed.');
+
     // 1. Initial Load Logic
     const loadStorageData = useCallback(async () => {
         setMessage('Loading User Data...');
-        setIsLoading(true)
+        setIsLoading(true);
         try {
             const token = await SecureStore.getItemAsync(SECURE_KEYS.TOKEN);
             const phone = storage.getString(STORAGE_KEYS.PHONE);
@@ -72,13 +74,13 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
                     isAuthenticated: true,
                 });
             } else {
-                setUser(prev => ({ ...prev, isAuthenticated: false, }));
+                setUser(prev => ({ ...prev, isAuthenticated: false }));
             }
         } catch (e) {
-            setUser(prev => ({ ...prev, isAuthenticated: false}));
+            setUser(prev => ({ ...prev, isAuthenticated: false }));
         } finally {
             setMessage('');
-            setIsLoading(false)
+            setIsLoading(false);
         }
     }, []);
 
@@ -94,25 +96,21 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
             const authResult = await userLoginVerifyOtp(phone, otp);
 
             if (!authResult.success) {
-                console.log('authResult : ', authResult);
                 return { success: false, errorMessage: authResult.errorMessage, errorStatus: authResult.errorStatus };
             }
 
-            console.log('Accessed authResult.success page');
             const token = authResult.data.access_token;
             await SecureStore.setItemAsync(SECURE_KEYS.TOKEN, token);
             storage.set(STORAGE_KEYS.PHONE, phone);
 
-            // Fetch profile immediately after token is secured
             setMessage('Fetching Profile');
-            const profileResult = await getUserProfile(token);
+            const profileResult = await getUserProfile();
             if (!profileResult.success) {
                 return { success: false, errorMessage: "Failed to fetch profile" };
             }
 
             const p = profileResult.data;
 
-            // Save to MMKV
             if (p.gender) storage.set(STORAGE_KEYS.GENDER, p.gender);
             if (p.email) storage.set(STORAGE_KEYS.EMAIL, p.email);
             if (p.name) storage.set(STORAGE_KEYS.FULL_NAME, p.name);
@@ -150,18 +148,46 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
             profilePicture: null,
             isAuthenticated: false,
         });
-        setMessage('')
-        setIsLoading(false)
+        setMessage('');
+        setIsLoading(false);
     };
 
-    const refreshProfile = async () => {
+    // Refetches from server, updates both MMKV and React state
+    const refreshProfile = useCallback(async () => {
         const token = await SecureStore.getItemAsync(SECURE_KEYS.TOKEN);
+        console.log('Token is: ', token)
         if (!token) return;
-        const res = await getUserProfile(token);
-        if (res.success) {
-            // Update state and storage logic here...
+
+        setIsLoading(true);
+        setMessage('Refreshing profile...');
+
+        try {
+            const res = await getUserProfile();
+            if (!res.success) return;
+
+            const p = res.data;
+
+            // Persist fresh values to MMKV (only overwrite if server returned a value)
+            if (p.gender) storage.set(STORAGE_KEYS.GENDER, p.gender);
+            if (p.email) storage.set(STORAGE_KEYS.EMAIL, p.email);
+            if (p.name) storage.set(STORAGE_KEYS.FULL_NAME, p.name);
+            if (p.profilePicture) storage.set(STORAGE_KEYS.PROFILE_PICTURE, p.profilePicture);
+
+            // Sync React state so every consumer re-renders with fresh data
+            setUser(prev => ({
+                ...prev,
+                gender: p.gender ?? prev.gender,
+                email: p.email ?? prev.email,
+                fullName: p.name ?? prev.fullName,
+                profilePicture: p.profilePicture ?? prev.profilePicture,
+            }));
+        } catch (e) {
+            console.error('refreshProfile error:', e);
+        } finally {
+            setMessage('');
+            setIsLoading(false);
         }
-    };
+    }, []);
 
     return (
         <UserContext.Provider value={{ ...user, login, logout, refreshProfile, isLoading, message }}>

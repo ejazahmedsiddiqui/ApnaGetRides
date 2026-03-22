@@ -64,7 +64,7 @@ const Login = () => {
                     setStep(1);
                     return;
                 } else {
-                    router.replace('/');
+                    router.replace('/Profile');
                 }
                 break;
 
@@ -186,7 +186,7 @@ const Login = () => {
                             alignItems: 'center'
                         }}>
                             <ActivityIndicator size={32} color={theme.colors.textPrimary}/>
-                            {message && <Text style={styles.resendLink}>{message}</Text>}
+                            {message && <Text style={[styles.resendLink, {color: theme.colors.textSecondary}]}>{message}</Text>}
                         </View>
                     </SafeAreaView>}
                 </View>

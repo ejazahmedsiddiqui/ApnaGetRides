@@ -179,7 +179,7 @@ const PersonalSecurity = ({activeTab, onTabChange}: ProfileHeaderProps) => {
 
     const swipeGesture = Gesture.Pan()
         .onEnd((event) => {
-            if (event.translationX > 50 && activeTab === 'security')
+            if (event.translationX > 20 && activeTab === 'security')
                 scheduleOnRN(onTabChange, 'details')
         })
     return (

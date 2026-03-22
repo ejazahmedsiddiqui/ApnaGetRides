@@ -29,15 +29,31 @@ export const userLoginVerifyOtp = async (identifier, otp) => {
     }
 };
 
-export const getUserProfile = async (token) => {
+export const getUserProfile = async () => {
     console.log('@/api/auth/getUserProfile Accessed');
     try {
         const response = await apiClient.get('/auth/profile');
-        console.log('@/api/auth/getUserProfile response data is: ', response.data)
         return {success: true, data: response.data, token: response.data.access_token}
     } catch (error) {
         console.log('Error caught in getUserProfile try/catch ⟼ ', error);
         return {success: false, error}
+    }
+}
+
+export const updateUserProfile = async (userData) => {
+    console.log('@/api/auth/updateUserProfile Accessed');
+    const formData = new FormData();
+    if(userData.name) formData.append('name', userData.name);
+    if(userData.email) formData.append('email', userData.email);
+    if(userData.gender) formData.append('gender', userData.gender);
+    if(userData.phone) formData.append('phone', userData.phone);
+    console.log(formData)
+    try {
+        const response = await apiClient.patch('/auth/profile', formData);
+        return { success: true, data: response.data, token: response.data.access_token }
+    } catch (error) {
+        console.log('@/api/auth/updateUserProfile ⟼ an error occurred: ', error);
+        return { success: false, error: error.data}
     }
 }
 
