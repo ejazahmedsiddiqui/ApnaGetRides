@@ -9,7 +9,7 @@ export const userLoginGetOtp = async (identifier) => {
         return {success: true, data: response.data}
     } catch (error) {
         console.log('Error caught in userLogin try/catch ⟼ ', error);
-        return {success: false, error}
+        return {success: false, errorMessage: error.message, errorStatus: error.status};
     }
 };
 

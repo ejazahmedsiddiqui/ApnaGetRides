@@ -1,4 +1,5 @@
 import {
+    ActivityIndicator,
     ScrollView,
     StyleSheet,
     Switch,
@@ -17,6 +18,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import {GestureDetector, Gesture} from 'react-native-gesture-handler'
 import {scheduleOnRN} from 'react-native-worklets';
+import {useUser} from "@/context/UserContext";
 
 const DEVICES = [
     {id: "1", name: "iPhone 15 Pro", location: "New York, US", lastActive: "Now", current: true},
@@ -176,12 +178,24 @@ const TwoFAPanel = ({
 const PersonalSecurity = ({activeTab, onTabChange}: ProfileHeaderProps) => {
     const {theme} = useTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
+    const { isLoading,  message} = useUser();
 
     const swipeGesture = Gesture.Pan()
         .onEnd((event) => {
             if (event.translationX > 20 && activeTab === 'security')
                 scheduleOnRN(onTabChange, 'details')
         })
+    if (isLoading) {
+        return (
+
+            <View style={styles.safeArea}>
+                <ActivityIndicator size={'large'} color={theme.colors.textSecondary}/>
+                { message &&
+                    <Text style={styles.sectionLabel}>{message}</Text>}
+            </View>
+
+        )
+    }
     return (
         <View
             style={styles.safeArea}
