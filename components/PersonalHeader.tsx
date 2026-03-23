@@ -40,13 +40,13 @@ const ProfileHeader = ({activeTab, onTabChange}: ProfileHeaderProps) => {
                 justifyContent: 'flex-start',
                 paddingVertical: 12,
             }}>
-                <TouchableOpacity
+                {router.canGoBack() ? <TouchableOpacity
                     style={{}}
                     onPress={() => router.back()}>
                     <ChevronLeft size={22} color={theme.colors.textPrimary} style={{
                         marginLeft: '4%',
                     }}/>
-                </TouchableOpacity>
+                </TouchableOpacity> : <View style={{marginLeft: '4%'}}/> }
                 <Text style={styles.title}>My Account</Text>
             </View>
             <View style={styles.tabBar}

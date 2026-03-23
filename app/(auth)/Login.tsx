@@ -8,7 +8,25 @@ import {useTheme} from "react-native-zustand-theme";
 import {useOtpLogin} from "@/hooks/useOtpLogin";
 import {AlertTriangle} from "lucide-react-native";
 import {useUser} from "@/context/UserContext";
+import Animated, {
+    Easing,
+    Extrapolation,
+    interpolate,
+    useAnimatedStyle,
+    useSharedValue, withSpring,
+    withTiming
+} from "react-native-reanimated";
 
+const useCardFlip = () => {
+    const isFlipped = useSharedValue(0);
+    const flip = () => {
+        isFlipped.value = withTiming(isFlipped.value === 0 ? 1 : 0, {
+            duration: 700,
+            easing: Easing.bezier(0.4, 0, 0.2, 1),
+        })
+    }
+    return {isFlipped, flip};
+}
 const Login = () => {
 
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -16,11 +34,50 @@ const Login = () => {
     const [step, setStep] = useState(0);
     const [resendTimer, setResendTimer] = useState(0);
     const [errors, setErrors] = useState([]);
-    const {theme, isDark} = useTheme();
 
-    const {login, isLoading, message} = useUser();
+    const titleValue = useSharedValue(0);
+
+
     const {loading, getOtp, error} = useOtpLogin();
+    const {login, isLoading, message} = useUser();
+    const {theme} = useTheme();
+    const {isFlipped, flip} = useCardFlip();
     const styles = useMemo(() => createStyles(theme), [theme]);
+
+    useEffect(() => {
+        titleValue.value = withSpring(1, {
+            mass: 1,
+            stiffness: 100,
+            damping: 10,
+            overshootClamping: false,
+        })
+    }, []);
+
+    const titleAnimStyle = useAnimatedStyle(() => ({
+        transform: [{
+            translateY: interpolate(
+                titleValue.value, [0, 1], [80, 0]
+            )
+        }],
+        opacity: interpolate(titleValue.value, [0, 1], [0, 1])
+    }));
+
+
+    const frontStyle = useAnimatedStyle(() => ({
+        transform: [
+            {perspective: 900},
+            {rotateY: `${interpolate(isFlipped.value, [0, 1], [0, 180])}deg`}
+        ],
+        pointerEvents: isFlipped.value > 0.5 ? 'none' : 'auto',
+    }));
+
+    const backStyle = useAnimatedStyle(() => ({
+        transform: [
+            {perspective: 900},
+            {rotateY: `${interpolate(isFlipped.value, [0, 1], [180, 360])}deg`}
+        ],
+        pointerEvents: isFlipped.value < 0.5 ? 'none' : 'auto',
+    }));
 
     useEffect(() => {
         let interval: number = 0;
@@ -33,8 +90,6 @@ const Login = () => {
     }, [resendTimer]);
 
 
-
-
     const handleLoginButtonPress = async () => {
         switch (step) {
             case 0:
@@ -44,9 +99,9 @@ const Login = () => {
                 }
                 // Send OTP via your existing hook logic
                 const otpSent = await getOtp(phoneNumber)
-                    .then();
                 if (otpSent) {
                     setStep(1);
+                    flip()
                     setResendTimer(30);
                 }
                 break;
@@ -61,6 +116,7 @@ const Login = () => {
 
                 if (!result.success) {
                     Alert.alert('Login Failed', result.errorMessage || 'An error occurred');
+                    flip()
                     setStep(1);
                     return;
                 } else {
@@ -70,6 +126,7 @@ const Login = () => {
 
             default:
                 setStep(0);
+                flip()
                 break;
         }
     };
@@ -82,114 +139,126 @@ const Login = () => {
         setResendTimer(30);
     };
 
-    const isGetOtpDisabled = phoneNumber.length !== 10;
-    const isLoginDisabled = otp.length !== 4;
+    const isGetOtpDisabled = phoneNumber.length !== 10 || loading;
+    const isLoginDisabled = otp.length !== 4 || loading;
     const isDisabled = step === 0 ? isGetOtpDisabled : isLoginDisabled;
     return (
         <>
             <StatusBar style={'light'}/>
             <SafeAreaView style={styles.container}>
-                <View style={styles.background}>
-                    <View style={{
-                        marginTop: '30%',
-                        alignItems: 'center'
-                    }}>
-                        <Text style={styles.companyTitle}>Apna</Text>
-                        <Text style={styles.appTitle}>GetRide</Text>
-                    </View>
-                    {error?.message && !loading && !isLoading && (
-                        <View style={styles.formField}>
-                            <View style={styles.errorContainer}>
-                                <AlertTriangle size={24} color={'yellow'} fill={'red'}/>
-                                <Text style={styles.errorText}>{error.message}</Text>
-                                <AlertTriangle size={24} color={'yellow'} fill={'red'}/>
-                            </View>
+                <Animated.View style={[styles.titleView, titleAnimStyle]}>
+                    <View style={styles.background}>
+                        <View style={{
+                            marginTop: '30%',
+                            alignItems: 'center'
+                        }}>
+                            <Text style={styles.companyTitle}>Apna</Text>
+                            <Text style={styles.appTitle}>GetRide</Text>
                         </View>
-                    )}
-                    {
-                        !error?.message
-                        && !loading
-                        && !isLoading
-                        && <View style={styles.loginContainer}>
+
+                        {error?.message && !loading && !isLoading && (
                             <View style={styles.formField}>
-                                {step === 0 && (<RenderFormField
-                                    label={'Phone Number'}
-                                    value={phoneNumber}
-                                    onChangeText={setPhoneNumber}
-                                    inputType={'numeric'}
-                                    maxLength={10}
-                                    placeholder={'Enter your 10-digit phone number'}
-                                    labelColor={theme.colors.textSecondary}
-                                    labelColorActive={theme.colors.textPrimary}
-                                    borderColorInactive={theme.colors.border}
-                                    borderColorActive={theme.colors.textSecondary}
-                                />)}
-                                {step === 1 && !loading && (<RenderFormField
-                                    label={'Enter your OTP'}
-                                    value={otp}
-                                    onChangeText={setOtp}
-                                    inputType={'numeric'}
-                                    maxLength={4}
-                                    placeholder={`Enter your 6-digit OTP received on ${phoneNumber}`}
-                                    labelColor={theme.colors.textSecondary}
-                                    labelColorActive={theme.colors.textPrimary}
-                                    borderColorInactive={theme.colors.border}
-                                    borderColorActive={theme.colors.textSecondary}                              />)}
+                                <View style={styles.errorContainer}>
+                                    <AlertTriangle size={24} color={'yellow'} fill={'red'}/>
+                                    <Text style={styles.errorText}>{error.message}</Text>
+                                    <AlertTriangle size={24} color={'yellow'} fill={'red'}/>
+                                </View>
                             </View>
-                            <TouchableOpacity
-                                style={[
-                                    styles.loginButton,
-                                    isDisabled && styles.loginButtonDisabled
-                                ]}
-                                onPress={handleLoginButtonPress}
-                                disabled={isDisabled}
-                            >
-                                <Text
+                        )}
+                        {
+                            !error?.message
+                            && !isLoading
+                            && <View style={styles.loginContainer}>
+                                <View style={styles.formField}>
+                                    <Animated.View style={[styles.face, frontStyle]}>
+                                        <RenderFormField
+                                            label={'Phone Number'}
+                                            value={phoneNumber}
+                                            onChangeText={setPhoneNumber}
+                                            inputType={'numeric'}
+                                            maxLength={10}
+                                            placeholder={'Enter your 10-digit phone number'}
+                                            labelColor={theme.colors.textSecondary}
+                                            labelColorActive={theme.colors.textPrimary}
+                                            borderColorInactive={theme.colors.border}
+                                            borderColorActive={theme.colors.textSecondary}
+                                        />
+                                    </Animated.View>
+                                    <Animated.View style={[styles.face, backStyle]}>
+                                        <RenderFormField
+                                            label={'Enter your OTP'}
+                                            value={otp}
+                                            onChangeText={setOtp}
+                                            inputType={'numeric'}
+                                            maxLength={4}
+                                            placeholder={`Enter your 6-digit OTP received on ${phoneNumber}`}
+                                            labelColor={theme.colors.textSecondary}
+                                            labelColorActive={theme.colors.textPrimary}
+                                            borderColorInactive={theme.colors.border}
+                                            borderColorActive={theme.colors.textSecondary}
+                                        />
+                                    </Animated.View>
+                                </View>
+                                <TouchableOpacity
                                     style={[
-                                        styles.loginButtonText,
-                                        isDisabled && styles.loginButtonTextDisabled
+                                        styles.loginButton,
+                                        isDisabled && styles.loginButtonDisabled
                                     ]}
-                                >
-                                    {step === 0 ? 'Get OTP' : 'Login'}
-                                </Text>
-                            </TouchableOpacity>
-                            {step !== 0 && <View style={styles.otherOptions}>
-                                <TouchableOpacity
-                                    style={styles.subOption}
-                                    onPress={() => setStep(0)}
-                                >
-                                    <Text style={styles.subOptionText}>
-                                        Change Phone Number?
-                                    </Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    onPress={handleResendOTP}
-                                    disabled={resendTimer > 0}
+                                    onPress={handleLoginButtonPress}
+                                    disabled={isDisabled}
                                 >
                                     <Text
                                         style={[
-                                            styles.resendLink,
-                                            resendTimer > 0 && styles.resendDisabled,
+                                            styles.loginButtonText,
+                                            isDisabled && styles.loginButtonTextDisabled
                                         ]}
                                     >
-                                        {resendTimer > 0
-                                            ? `Resend in ${resendTimer}s`
-                                            : "Resend OTP"}
+                                        {loading ? 'Loading...' : `${step === 0 ? 'Get OTP' : 'Login'}`}
                                     </Text>
                                 </TouchableOpacity>
+                                {step !== 0 && <View style={styles.otherOptions}>
+                                    <TouchableOpacity
+                                        style={styles.subOption}
+                                        onPress={() => {
+                                            setStep(0);
+                                            flip()
+                                        }}
+                                    >
+                                        <Text style={styles.subOptionText}>
+                                            Change Phone Number?
+                                        </Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={handleResendOTP}
+                                        disabled={resendTimer > 0}
+                                    >
+                                        <Text
+                                            style={[
+                                                styles.resendLink,
+                                                resendTimer > 0 && styles.resendDisabled,
+                                            ]}
+                                        >
+                                            {resendTimer > 0
+                                                ? `Resend in ${resendTimer}s`
+                                                : "Resend OTP"}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>}
                             </View>}
-                        </View>}
-                    {(loading || isLoading) && <SafeAreaView style={styles.container}>
-                        <View style={{
-                            flex: 1,
-                            justifyContent: 'flex-start',
-                            alignItems: 'center'
-                        }}>
-                            <ActivityIndicator size={32} color={theme.colors.textPrimary}/>
-                            {message && <Text style={[styles.resendLink, {color: theme.colors.textSecondary}]}>{message}</Text>}
-                        </View>
-                    </SafeAreaView>}
-                </View>
+                        {(isLoading) && <SafeAreaView style={styles.container}>
+                            <View style={{
+                                flex: 1,
+                                justifyContent: 'flex-start',
+                                alignItems: 'center'
+                            }}>
+                                <ActivityIndicator size={32} color={theme.colors.textPrimary}/>
+                                {message &&
+                                    <Text
+                                        style={[styles.resendLink, {color: theme.colors.textSecondary}]}>{message}</Text>}
+                            </View>
+                        </SafeAreaView>}
+                    </View>
+                </Animated.View>
             </SafeAreaView>
         </>
     )
@@ -206,6 +275,10 @@ const createStyles = (theme: any) => StyleSheet.create({
         flex: 1,
         paddingVertical: 12,
         paddingHorizontal: 20,
+    },
+    titleView: {
+        flex: 1,
+        width: '100%'
     },
     companyTitle: {
         fontSize: 24,
@@ -224,8 +297,15 @@ const createStyles = (theme: any) => StyleSheet.create({
         alignItems: 'center',
     },
     formField: {
-        // flex: 1,
+        width: '100%',
+        height: 70,
         marginVertical: 20,
+        transform: [{perspective: 900}],
+    },
+    face: {
+        ...StyleSheet.absoluteFillObject,
+        borderRadius: 20,
+        backfaceVisibility: 'hidden',
     },
     errorContainer: {
         flexDirection: 'row',

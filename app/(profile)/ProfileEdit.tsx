@@ -19,7 +19,7 @@ import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useGetUserProfile, useEditUserProfile } from "@/hooks/useUserProfile";
 
-const GENDER_OPTIONS = ["Male", "Female", "Non-binary", "Prefer not to say"];
+const GENDER_OPTIONS = ["male", "female"];
 
 // ─── Local state shape mirrors the edit form ──────────────────────────────────
 
@@ -51,6 +51,7 @@ const ProfileEdit = () => {
         if (profile.email) setEmail(profile.email);
         if (profile.gender) setGender(profile.gender);
         if (profile.phone) setPhone(profile.phone);
+        console.log('Verification - phone: '+ profile.isPhoneVerified + '\n email: ' + profile.isEmailVerified);
     }, [profile]);
 
     const handleSave = async () => {
@@ -238,7 +239,7 @@ const ProfileEdit = () => {
                             autoCapitalize="none"
                             styles={styles}
                             theme={theme}
-                            editable={!saving}
+                            editable={!saving && !profile.isEmailVerified}
                         />
 
                         <View style={styles.separator} />
@@ -251,7 +252,7 @@ const ProfileEdit = () => {
                             keyboardType="phone-pad"
                             styles={styles}
                             theme={theme}
-                            editable={!saving || !profile?.isPhoneVerified}
+                            editable={!saving && !profile?.isPhoneVerified}
                         />
                     </Animated.View>
 
