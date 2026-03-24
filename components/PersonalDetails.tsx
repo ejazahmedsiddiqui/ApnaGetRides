@@ -72,7 +72,7 @@ const PersonalDetails = ({activeTab, onTabChange}: ProfileHeaderProps) => {
 
         )
     }
-    return (
+    if(isAuthenticated) return (
         <View
             style={styles.safeArea}
         >
