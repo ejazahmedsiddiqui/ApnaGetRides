@@ -55,28 +55,31 @@ const PersonalDetails = ({activeTab, onTabChange}: ProfileHeaderProps) => {
     }, [isAuthenticated]);
 
     const swipeGesture = Gesture.Pan()
+        .activeOffsetX([-20, 20])      // ← Only activate after 20px horizontal movement
+        .failOffsetY([-10, 10])        // ← Fail/cancel if vertical movement detected first
         .onEnd((event) => {
-            if (event.translationX < -20 && activeTab === 'details') {
-                scheduleOnRN(onTabChange, 'security')
+            if (event.translationX < -50 && activeTab === 'details') {
+                scheduleOnRN(onTabChange, 'security');
             }
-        })
+        });
 
     if (isLoading) {
         return (
 
             <View style={styles.safeArea}>
                 <ActivityIndicator size={'large'} color={theme.colors.textSecondary}/>
-                { message &&
-                <Text style={styles.sectionLabel}>{message}</Text>}
+                {message &&
+                    <Text style={styles.sectionLabel}>{message}</Text>}
             </View>
 
         )
     }
-    if(isAuthenticated) return (
+    if (!isAuthenticated) return null;
+    return (
         <View
             style={styles.safeArea}
         >
-            {!isLoading && <GestureDetector gesture={swipeGesture}>
+            <GestureDetector gesture={swipeGesture}>
                 <Animated.View
                     key="details"
                     style={{flex: 1, overflow: 'hidden'}}
@@ -160,7 +163,7 @@ const PersonalDetails = ({activeTab, onTabChange}: ProfileHeaderProps) => {
 
                     </ScrollView>
                 </Animated.View>
-            </GestureDetector>}
+            </GestureDetector>
         </View>
     );
 };

@@ -181,10 +181,13 @@ const PersonalSecurity = ({activeTab, onTabChange}: ProfileHeaderProps) => {
     const { isLoading,  message} = useUser();
 
     const swipeGesture = Gesture.Pan()
+        .activeOffsetX([20, -20])      // ← Only activate after 20px horizontal movement
+        .failOffsetY([10, -10])        // ← Fail/cancel if vertical movement detected first
         .onEnd((event) => {
-            if (event.translationX > 20 && activeTab === 'security')
-                scheduleOnRN(onTabChange, 'details')
-        })
+            if (event.translationX < 50 && activeTab === 'security') {
+                scheduleOnRN(onTabChange, 'details');
+            }
+        });
     if (isLoading) {
         return (
 

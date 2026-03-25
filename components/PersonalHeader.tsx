@@ -88,7 +88,7 @@ export default ProfileHeader;
 const createStyles = (theme: any) =>
     StyleSheet.create({
         wrapper: {
-            height: '12%',
+            height: '14%',
             backgroundColor: theme.colors.background,
             borderBottomWidth: 1,
             borderBottomColor: theme.colors.border
