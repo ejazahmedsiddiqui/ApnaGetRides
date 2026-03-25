@@ -1,4 +1,4 @@
-import {StyleSheet, ActivityIndicator} from "react-native";
+import {StyleSheet, ActivityIndicator, ScrollView} from "react-native";
 import {useTheme} from "react-native-zustand-theme";
 import {useEffect, useMemo, useState} from "react";
 import {SafeAreaView} from "react-native-safe-area-context";
@@ -27,6 +27,7 @@ const Profile = () => {
     }
     return (
         <SafeAreaView style={styles.container}>
+
             <ProfileHeader activeTab={tabs} onTabChange={setTabs}/>
             {tabs === "details" ? (
                 <PersonalDetails activeTab={tabs} onTabChange={setTabs}/>

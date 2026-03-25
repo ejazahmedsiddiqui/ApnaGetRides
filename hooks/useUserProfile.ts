@@ -85,7 +85,7 @@ export const useGetUserProfile = () => {
                 gender: p.gender ?? null,
                 phone: p.phone ?? null,
                 profilePicture: p.profilePicture ?? null,
-                isEmailVerified: p.isPhoneVerified ?? false,
+                isEmailVerified: p.isEmailVerified ?? false,
                 isPhoneVerified: p.isPhoneVerified ?? false,
             },
             loading: false,

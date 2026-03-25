@@ -15,7 +15,7 @@ const links = [
 
 const Footer = () => {
     const router = useRouter();
-    const { theme } = useTheme();
+    const { theme, isDark } = useTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const pathname = usePathname();
     const { isAuthenticated } = useUser();
@@ -54,12 +54,13 @@ const Footer = () => {
                         <View style={styles.iconContainer}>
                             <item.icon
                                 size={24}
-                                color={active ? theme.colors.accent : theme.colors.inverted}
+                                color={active ? (isDark ? '#1e1e1e': '#fff') : theme.colors.textSecondary}
                             />
                         </View>
                         <Text style={[
                             styles.label,
-                            active && styles.activeLabel
+                            active && styles.activeLabel,
+                            active && (isDark ? { color: '#1e1e1e'} : { color: '#fff'})
                         ]}>
                             {item.label}
                         </Text>
@@ -95,13 +96,13 @@ const createStyles = (theme: any) => StyleSheet.create({
         borderRadius: theme.radius.sm
     },
     activeItem: {
-        backgroundColor: theme.colors.invertedExtraMuted,
+        backgroundColor: theme.colors.inverted,
     },
     iconContainer: {
         position: 'relative',
     },
     label: {
-        color: theme.colors.inverted,
+        color: theme.colors.textPrimary,
         fontSize: theme.fontSize.sm,
         marginTop: theme.spacing.xs,
     },

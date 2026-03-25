@@ -47,6 +47,7 @@ export const updateUserProfile = async (userData) => {
     if(userData.email) formData.append('email', userData.email);
     if(userData.gender) formData.append('gender', userData.gender);
     if(userData.phone) formData.append('phone', userData.phone);
+    if(userData.image) formData.append('profilePicture', userData.image);
     console.log(formData)
     try {
         const response = await apiClient.patch('/auth/profile', formData);
