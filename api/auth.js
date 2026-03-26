@@ -47,7 +47,6 @@ export const updateUserProfile = async (userData) => {
     if(userData.email) formData.append('email', userData.email);
     if(userData.gender) formData.append('gender', userData.gender);
     if(userData.phone) formData.append('phone', userData.phone);
-    if(userData.image) formData.append('profilePicture', userData.image);
     console.log(formData)
     try {
         const response = await apiClient.patch('/auth/profile', formData);
@@ -57,4 +56,18 @@ export const updateUserProfile = async (userData) => {
         return { success: false, error: error.data}
     }
 }
+export const updateUserProfilePicture = async (file) => {
 
+    console.log('@/api/auth/updateUserProfilePicture file is: ', file);
+    const formData = new FormData()
+    formData.append("file",file)
+
+    try {
+        const response = await apiClient.post('/auth/upload-photo', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return { success: true, data: response.data };
+    } catch (error) {
+        return { success: false, error: error.response ?? error };
+    }
+};
