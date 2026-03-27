@@ -10,7 +10,7 @@ interface UserProfileData {
     email: string | null;
     gender: string | null;
     phone: string | null;
-    profilePicture: string | null;
+    profileImage: string | null;
     isPhoneVerified: boolean;
     isEmailVerified: boolean;
 }
@@ -41,7 +41,7 @@ export const useGetUserProfile = () => {
             email: null,
             gender: null,
             phone: null,
-            profilePicture: null,
+            profileImage: null,
             isEmailVerified: false,
             isPhoneVerified: false,
         },
@@ -81,7 +81,7 @@ export const useGetUserProfile = () => {
                 email: p.email ?? null,
                 gender: p.gender ?? null,
                 phone: p.phone ?? null,
-                profilePicture: p.profilePicture ?? null,
+                profileImage: p.profileImage ?? null,
                 isEmailVerified: p.isEmailVerified ?? false,
                 isPhoneVerified: p.isPhoneVerified ?? false,
             },

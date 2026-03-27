@@ -7,7 +7,6 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    TextInput,
     TouchableOpacity,
     View,
 } from "react-native";
@@ -19,6 +18,7 @@ import {router} from "expo-router";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {useGetUserProfile, useEditUserProfile, useUploadProfilePicture} from "@/hooks/useUserProfile";
 import * as ImagePicker from 'expo-image-picker';
+import RenderFormField from "@/components/RenderFormField";
 
 const GENDER_OPTIONS = ["male", "female"];
 
@@ -52,7 +52,7 @@ const ProfileEdit = () => {
         if (profile.email) setEmail(profile.email);
         if (profile.gender) setGender(profile.gender);
         if (profile.phone) setPhone(profile.phone);
-        // Don't pre-fill pendingImageUri — we show profile.profilePicture as fallback
+        console.log('The profile details are: ', profile)
     }, [profile]);
 
     const handleChangePhoto = async () => {
@@ -142,7 +142,7 @@ const ProfileEdit = () => {
     // Displayed image: newly picked (local) > server value > placeholder
     const displayImage =
         pendingImageUri ??
-        profile.profilePicture ??
+        profile.profileImage ??
         'https://img.freepik.com/free-vector/user-circles-set_78370-4704.jpg';
 
     return (
@@ -218,21 +218,26 @@ const ProfileEdit = () => {
                     <Animated.View entering={FadeInDown.duration(300).delay(100)} style={styles.card}>
                         <Text style={styles.sectionLabel}>PROFILE INFO</Text>
 
-                        <InputField
-                            label="Full Name"
+                        <RenderFormField
                             value={name}
                             onChangeText={setName}
+                            label="Full Name"
                             placeholder="Enter your full name"
                             autoCapitalize="words"
-                            styles={styles}
-                            theme={theme}
                             editable={!isBusy}
+                            labelColor={theme.colors.textSecondary}
+                            labelColorActive={theme.colors.textPrimary}
+                            inputStyle={{
+                                backgroundColor: theme.colors.background,
+                            }}
+                            textColor={theme.colors.textSecondary}
+                            borderColorActive={theme.colors.textPrimary}
+                            borderColorInactive={theme.colors.border}
                         />
-
-                        <View style={styles.separator}/>
+                        <View style={[styles.separator, { marginTop: 14}]}/>
 
                         {/* Gender picker */}
-                        <View style={styles.fieldGroup}>
+                        <View>
                             <Text style={styles.fieldLabel}>Gender</Text>
                             <TouchableOpacity
                                 style={styles.selectRow}
@@ -240,7 +245,7 @@ const ProfileEdit = () => {
                                 onPress={() => !isBusy && setGenderOpen(v => !v)}
                             >
                                 <Text style={[styles.selectValue, !gender && styles.placeholder]}>
-                                    {gender || "Select gender"}
+                                    {gender.charAt(0).toUpperCase() + gender.slice(1) || "Select gender"}
                                 </Text>
                                 <Text style={[styles.chevron, genderOpen && styles.chevronOpen]}>›</Text>
                             </TouchableOpacity>
@@ -263,7 +268,7 @@ const ProfileEdit = () => {
                                                 styles.dropdownItemText,
                                                 gender === opt && styles.dropdownItemTextActive,
                                             ]}>
-                                                {opt}
+                                                {opt.charAt(0).toUpperCase() + opt.slice(1)}
                                             </Text>
                                             {gender === opt && (
                                                 <Check size={14} color={theme.colors.background}/>
@@ -276,28 +281,37 @@ const ProfileEdit = () => {
 
                         <View style={styles.separator}/>
 
-                        <InputField
-                            label="Email Address"
+                        <RenderFormField
                             value={email}
                             onChangeText={setEmail}
-                            placeholder="Enter your email"
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            styles={styles}
-                            theme={theme}
                             editable={!isBusy && !profile.isEmailVerified}
+                            label="Email"
+                            placeholder="Enter your email"
+                            labelColor={theme.colors.textSecondary}
+                            labelColorActive={theme.colors.textPrimary}
+                            inputStyle={{
+                                backgroundColor: theme.colors.background,
+                            }}
+                            textColor={theme.colors.textSecondary}
+                            borderColorActive={theme.colors.textPrimary}
+                            borderColorInactive={theme.colors.border}
                         />
 
                         <View style={styles.separator}/>
 
-                        <InputField
+                        <RenderFormField
                             label="Phone Number"
                             value={phone}
                             onChangeText={setPhone}
                             placeholder="Enter your phone number"
-                            keyboardType="phone-pad"
-                            styles={styles}
-                            theme={theme}
+                            labelColor={theme.colors.textSecondary}
+                            labelColorActive={theme.colors.textPrimary}
+                            inputStyle={{
+                                backgroundColor: theme.colors.background,
+                            }}
+                            textColor={theme.colors.textSecondary}
+                            borderColorActive={theme.colors.textPrimary}
+                            borderColorInactive={theme.colors.border}
                             editable={!isBusy && !profile.isPhoneVerified}
                         />
                     </Animated.View>
@@ -330,39 +344,8 @@ const ProfileEdit = () => {
     );
 };
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-const InputField = ({
-                        label, value, onChangeText, placeholder,
-                        keyboardType, autoCapitalize, styles, theme, editable = true,
-                    }: {
-    label: string;
-    value: string;
-    onChangeText: (v: string) => void;
-    placeholder?: string;
-    keyboardType?: any;
-    autoCapitalize?: any;
-    styles: ReturnType<typeof createStyles>;
-    theme: any;
-    editable?: boolean;
-}) => (
-    <View style={styles.fieldGroup}>
-        <Text style={styles.fieldLabel}>{label}</Text>
-        <TextInput
-            style={[styles.input, !editable && {opacity: 0.5}]}
-            value={value}
-            onChangeText={onChangeText}
-            placeholder={placeholder}
-            placeholderTextColor={theme.colors.textSecondary}
-            keyboardType={keyboardType}
-            autoCapitalize={autoCapitalize}
-            editable={editable}
-        />
-    </View>
-);
-
 export default ProfileEdit;
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const createStyles = (theme: any) => StyleSheet.create({
     container: {
         flex: 1,
@@ -494,9 +477,6 @@ const createStyles = (theme: any) => StyleSheet.create({
         color: theme.colors.textSecondary,
         marginBottom: 14
     },
-    fieldGroup: {
-        paddingVertical: 14
-    },
     fieldLabel: {
         fontSize: 12,
         color: theme.colors.textSecondary,
@@ -515,7 +495,8 @@ const createStyles = (theme: any) => StyleSheet.create({
     },
     separator: {
         height: 1,
-        backgroundColor: theme.colors.border
+        backgroundColor: theme.colors.border,
+        marginVertical: 14
     },
 
     selectRow: {

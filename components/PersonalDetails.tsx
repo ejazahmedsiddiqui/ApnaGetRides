@@ -47,7 +47,7 @@ const Field = ({
 const PersonalDetails = ({activeTab, onTabChange}: ProfileHeaderProps) => {
     const {theme} = useTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
-    const {isAuthenticated, profilePicture, fullName, email, gender, phone, isLoading, logout, message} = useUser();
+    const {isAuthenticated, profileImage, fullName, email, gender, phone, isLoading, logout, message} = useUser();
 
     useEffect(() => {
         if (!isAuthenticated)
@@ -94,7 +94,7 @@ const PersonalDetails = ({activeTab, onTabChange}: ProfileHeaderProps) => {
                         <View style={styles.avatarSection}>
                             <View style={styles.avatarWrapper}>
                                 <Image
-                                    source={{uri: profilePicture || 'https://img.freepik.com/free-vector/user-circles-set_78370-4704.jpg?ga=GA1.1.1874108308.1765959492&semt=ais_hybrid&w=740&q=80'}}
+                                    source={{uri: profileImage || 'https://img.freepik.com/free-vector/user-circles-set_78370-4704.jpg?ga=GA1.1.1874108308.1765959492&semt=ais_hybrid&w=740&q=80'}}
                                     style={styles.avatar}/>
                                 <TouchableOpacity style={styles.avatarBadge} activeOpacity={0.7}>
                                     <Pen size={20} color={theme.colors.textPrimary} style={{

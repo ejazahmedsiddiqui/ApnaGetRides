@@ -45,7 +45,7 @@ const RenderFormField = ({
                              children,
                              style,
                              inputStyle,
-                             textColor = '#000',
+                             textColor = '#fff',
                              error = '',
                              icon = null,
                              maxLength = null,
@@ -150,7 +150,7 @@ const RenderFormField = ({
                                 styles.inputText,
                                 inputStyle,
                                 {color: textColor},
-                                icon && styles.inputWithIcon
+                                icon && styles.inputWithIcon,
                             ]}
                             value={value}
                             onChangeText={handleTextChange}
@@ -212,16 +212,9 @@ const styles = StyleSheet.create({
         borderWidth: 1.5,
         borderRadius: 8,
         borderColor: '#E5E7EB',
-        backgroundColor: '#FAFAFA',
-        paddingHorizontal: 12,        // ← Changed from '2%'
-        minHeight: 48,                 // ← Changed from '4%'
+        minHeight: 48,
         flexDirection: 'row',
-        shadowColor: '#fff',
-        shadowOffset: {width: 0, height: 1},
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 1,
-        alignItems: 'center',          // ← Add this for better alignment
+        alignItems: 'center',
     },
     inputFieldError: {
         borderColor: '#DC2626',
@@ -231,16 +224,18 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 8,
-        width: 20,  // Add fixed width
-        height: 20, // Add fixed height
+        width: 20,
+        height: 20,
     },
     inputText: {
         flex: 1,
-        fontFamily: 'Montserrat',
-        fontSize: 12,
-        fontWeight: '400',
         color: '#111827',
+        fontSize: 15,
+        fontWeight: "500",
         paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRadius: 10,
+        borderWidth: 1,
     },
     inputWithIcon: {
         paddingLeft: 0,

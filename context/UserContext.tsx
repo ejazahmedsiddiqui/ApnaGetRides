@@ -11,7 +11,7 @@ interface UserState {
     gender: string | null;
     email: string | null;
     fullName: string | null;
-    profilePicture: string | null;
+    profileImage: string | null;
     isAuthenticated: boolean;
 }
 
@@ -36,7 +36,7 @@ const STORAGE_KEYS = {
     GENDER: "userGender",
     EMAIL: "userEmail",
     FULL_NAME: "userFullName",
-    PROFILE_PICTURE: "userProfilePicture",
+    PROFILE_IMAGE: "userProfilePicture",
 } as const;
 
 const UserContext = createContext<UserContextType | null>(null);
@@ -47,7 +47,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         gender: null,
         email: null,
         fullName: null,
-        profilePicture: null,
+        profileImage: null,
         isAuthenticated: false,
     });
 
@@ -70,7 +70,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
                     gender: storage.getString(STORAGE_KEYS.GENDER) ?? null,
                     email: storage.getString(STORAGE_KEYS.EMAIL) ?? null,
                     fullName: storage.getString(STORAGE_KEYS.FULL_NAME) ?? null,
-                    profilePicture: storage.getString(STORAGE_KEYS.PROFILE_PICTURE) ?? null,
+                    profileImage: storage.getString(STORAGE_KEYS.PROFILE_IMAGE) ?? null,
                     isAuthenticated: true,
                 });
             } else {
@@ -110,18 +110,18 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
             }
 
             const p = profileResult.data;
-
+            console.log('Profile Fetched is: ',p)
             if (p.gender) storage.set(STORAGE_KEYS.GENDER, p.gender);
             if (p.email) storage.set(STORAGE_KEYS.EMAIL, p.email);
             if (p.name) storage.set(STORAGE_KEYS.FULL_NAME, p.name);
-            if (p.profilePicture) storage.set(STORAGE_KEYS.PROFILE_PICTURE, p.profilePicture);
+            if (p.profileImage) storage.set(STORAGE_KEYS.PROFILE_IMAGE, p.profileImage);
 
             setUser({
                 phone,
                 gender: p.gender || null,
                 email: p.email || null,
                 fullName: p.name || null,
-                profilePicture: p.profilePicture || null,
+                profileImage: p.profileImage || null,
                 isAuthenticated: true,
             });
             return { success: true };
@@ -145,7 +145,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
             gender: null,
             email: null,
             fullName: null,
-            profilePicture: null,
+            profileImage: null,
             isAuthenticated: false,
         });
         setMessage('');
@@ -166,12 +166,12 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
             if (!res.success) return;
 
             const p = res.data;
-
+            console.log('Profile Fetched is: ',p)
             // Persist fresh values to MMKV (only overwrite if server returned a value)
             if (p.gender) storage.set(STORAGE_KEYS.GENDER, p.gender);
             if (p.email) storage.set(STORAGE_KEYS.EMAIL, p.email);
             if (p.name) storage.set(STORAGE_KEYS.FULL_NAME, p.name);
-            if (p.profilePicture) storage.set(STORAGE_KEYS.PROFILE_PICTURE, p.profilePicture);
+            if (p.profileImage) storage.set(STORAGE_KEYS.PROFILE_IMAGE, p.profileImage);
 
             // Sync React state so every consumer re-renders with fresh data
             setUser(prev => ({
@@ -179,7 +179,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
                 gender: p.gender ?? prev.gender,
                 email: p.email ?? prev.email,
                 fullName: p.name ?? prev.fullName,
-                profilePicture: p.profilePicture ?? prev.profilePicture,
+                profileImage: p.profileImage ?? prev.profileImage,
             }));
         } catch (e) {
             console.error('refreshProfile error:', e);
