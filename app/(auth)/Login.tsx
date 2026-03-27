@@ -121,7 +121,7 @@ const Login = () => {
                 flipTo(2);
                 const result = await login(phoneNumber, otp);
                 if (!result.success) {
-                    Alert.alert('Error', result.errorMessage || 'An error occurred: '+ result?.error?.message);
+                    Alert.alert('Error', result.errorMessage || 'An error occurred: ' + result?.error?.message);
                     flipTo(1);
                     setStep(1);
                 } else {
@@ -185,15 +185,20 @@ const Login = () => {
                                             placeholder={'Enter your 10-digit phone number'}
                                             labelColor={theme.colors.textSecondary}
                                             labelColorActive={theme.colors.textPrimary}
+                                            inputStyle={{
+                                                backgroundColor: theme.colors.background,
+                                            }}
+                                            textColor={theme.colors.textSecondary}
+                                            borderColorActive={theme.colors.textPrimary}
                                             borderColorInactive={theme.colors.border}
-                                            borderColorActive={theme.colors.textSecondary}
                                         />
                                         <TouchableOpacity
                                             style={[styles.loginButton, isGetOtpDisabled && styles.loginButtonDisabled]}
                                             onPress={handleLoginButtonPress}
                                             disabled={isGetOtpDisabled}
                                         >
-                                            <Text style={[styles.loginButtonText, isGetOtpDisabled && styles.loginButtonTextDisabled]}>
+                                            <Text
+                                                style={[styles.loginButtonText, isGetOtpDisabled && styles.loginButtonTextDisabled]}>
                                                 {loading ? 'Sending…' : 'Get OTP'}
                                             </Text>
                                         </TouchableOpacity>
@@ -209,15 +214,21 @@ const Login = () => {
                                             placeholder={`OTP sent to ${phoneNumber}`}
                                             labelColor={theme.colors.textSecondary}
                                             labelColorActive={theme.colors.textPrimary}
+                                            inputStyle={{
+                                                backgroundColor: theme.colors.background,
+                                                paddingLeft: 4,
+                                            }}
+                                            textColor={theme.colors.textSecondary}
+                                            borderColorActive={theme.colors.textPrimary}
                                             borderColorInactive={theme.colors.border}
-                                            borderColorActive={theme.colors.textSecondary}
                                         />
                                         <TouchableOpacity
                                             style={[styles.loginButton, isLoginDisabled && styles.loginButtonDisabled]}
                                             onPress={handleLoginButtonPress}
                                             disabled={isLoginDisabled}
                                         >
-                                            <Text style={[styles.loginButtonText, isLoginDisabled && styles.loginButtonTextDisabled]}>
+                                            <Text
+                                                style={[styles.loginButtonText, isLoginDisabled && styles.loginButtonTextDisabled]}>
                                                 {loading ? 'Verifying…' : 'Verify OTP'}
                                             </Text>
                                         </TouchableOpacity>
@@ -232,7 +243,8 @@ const Login = () => {
                                                 <Text style={styles.subOptionText}>Change Number?</Text>
                                             </TouchableOpacity>
                                             <TouchableOpacity onPress={handleResendOTP} disabled={resendTimer > 0}>
-                                                <Text style={[styles.resendLink, resendTimer > 0 && styles.resendDisabled]}>
+                                                <Text
+                                                    style={[styles.resendLink, resendTimer > 0 && styles.resendDisabled]}>
                                                     {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend OTP'}
                                                 </Text>
                                             </TouchableOpacity>
@@ -257,12 +269,14 @@ const Login = () => {
                                             {message ? (
                                                 <View style={styles.loadingMessageRow}>
                                                     <CheckCircle size={13} color={theme.colors.textSecondary}/>
-                                                    <Text style={[styles.loadingMessage, {color: theme.colors.textSecondary}]}>
+                                                    <Text
+                                                        style={[styles.loadingMessage, {color: theme.colors.textSecondary}]}>
                                                         {message}
                                                     </Text>
                                                 </View>
                                             ) : (
-                                                <Text style={[styles.loadingSubtitle, {color: theme.colors.textSecondary}]}>
+                                                <Text
+                                                    style={[styles.loadingSubtitle, {color: theme.colors.textSecondary}]}>
                                                     Hang tight, this takes a moment…
                                                 </Text>
                                             )}
@@ -273,7 +287,10 @@ const Login = () => {
                                                         key={i}
                                                         style={[
                                                             styles.dot,
-                                                            {backgroundColor: theme.colors.accent, opacity: 0.3 + i * 0.3},
+                                                            {
+                                                                backgroundColor: theme.colors.accent,
+                                                                opacity: 0.3 + i * 0.3
+                                                            },
                                                         ]}
                                                     />
                                                 ))}
