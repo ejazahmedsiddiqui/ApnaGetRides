@@ -11,10 +11,6 @@ import * as SplashScreen from "expo-splash-screen";
 import {Inter_900Black, useFonts} from '@expo-google-fonts/inter'
 import {BlurTargetView} from "expo-blur";
 
-if (Platform.OS === 'android') {
-    UIManager.setLayoutAnimationEnabledExperimental?.(true);
-}
-
 const queryClient = new QueryClient();
 
 SplashScreen.preventAutoHideAsync().catch(() => {
