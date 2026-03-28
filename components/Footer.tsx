@@ -1,29 +1,32 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View, Platform } from "react-native";
 import { useTheme } from "react-native-zustand-theme";
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { useRouter, usePathname } from "expo-router";
 import { useUser } from "@/context/UserContext";
 import { Car, Grid, Home, User, UserPlusIcon } from "lucide-react-native";
+import { BlurView } from "expo-blur";
+
+type FooterProps = {
+    blurTargetRef: React.RefObject<View | null>;
+};
 
 const links = [
-    { id: 'home',     icon: Home,        label: 'Home',     route: '/'           },
-    { id: 'services', icon: Grid,        label: 'Services', route: '/SearchPage' },
-    { id: 'rides',    icon: Car,         label: 'Rides',    route: '/ProfileEdit'},
-    { id: 'profile',  icon: User,        label: 'Profile',  route: '/Profile'    },
-    { id: 'login',    icon: UserPlusIcon,label: 'Login',    route: '/Login'      },
+    { id: 'home',     icon: Home,         label: 'Home',     route: '/'            },
+    { id: 'services', icon: Grid,         label: 'Services', route: '/SearchPage'  },
+    { id: 'rides',    icon: Car,          label: 'Rides',    route: '/ProfileEdit' },
+    { id: 'profile',  icon: User,         label: 'Profile',  route: '/Profile'     },
+    { id: 'login',    icon: UserPlusIcon, label: 'Login',    route: '/Login'       },
 ];
 
-const Footer = () => {
+const Footer = ({ blurTargetRef }: FooterProps) => {
     const router = useRouter();
     const { theme, isDark } = useTheme();
-    const styles = useMemo(() => createStyles(theme), [theme]);
+    const styles = useMemo(() => createStyles(theme, isDark), [theme, isDark]);
     const pathname = usePathname();
     const { isAuthenticated } = useUser();
 
     const isActive = (route: string): boolean => {
-        if (route === '/') {
-            return pathname === '/';
-        }
+        if (route === '/') return pathname === '/';
         return pathname.startsWith(route);
     };
 
@@ -31,85 +34,124 @@ const Footer = () => {
         router.replace(route as any);
     };
 
-    // Hide login link if authenticated
     const visibleLinks = isAuthenticated
         ? links.filter(link => link.id !== 'login')
         : links.filter(link => link.id !== 'profile');
 
     return (
+        <View style={styles.wrapper}>
+            <BlurView
+                style={styles.blurContainer}
+                blurTarget={blurTargetRef}
+                intensity={isDark ? 30 : 50}
+                tint={isDark ? "dark" : "light"}
+                blurMethod="dimezisBlurViewSdk31Plus"
+            >
+                {/* Glass tint overlay */}
+                <View style={styles.tintOverlay} pointerEvents="none" />
 
-        <View style={styles.footerContainer}>
-            {visibleLinks.map((item) => {
-                const active = isActive(item.route);
-                return (
-                    <TouchableOpacity
-                        key={item.id}
-                        onPress={() => handleNavigation(item.route)}
-                        activeOpacity={0.6}
-                        style={[
-                            styles.item,
-                            active && styles.activeItem
-                        ]}
-                    >
-                        <View style={styles.iconContainer}>
-                            <item.icon
-                                size={24}
-                                color={active ? (isDark ? '#1e1e1e': '#fff') : theme.colors.textSecondary}
-                            />
-                        </View>
-                        <Text style={[
-                            styles.label,
-                            active && styles.activeLabel,
-                            active && (isDark ? { color: '#1e1e1e'} : { color: '#fff'})
-                        ]}>
-                            {item.label}
-                        </Text>
-                    </TouchableOpacity>
-                )
-            })}
+                {/* Top border shine */}
+                <View style={styles.topBorder} pointerEvents="none" />
+
+                {visibleLinks.map((item) => {
+                    const active = isActive(item.route);
+                    const IconComp = item.icon;
+                    return (
+                        <TouchableOpacity
+                            key={item.id}
+                            onPress={() => handleNavigation(item.route)}
+                            activeOpacity={0.7}
+                            style={styles.item}
+                        >
+                            <View style={[styles.iconWrap, active && styles.iconWrapActive]}>
+                                <IconComp
+                                    size={20}
+                                    color={
+                                        active
+                                            ? (theme.colors.textPrimary)
+                                            : (theme.colors.textSecondary)
+                                    }
+                                    strokeWidth={active ? 2.5 : 1.8}
+                                />
+                            </View>
+
+                            <Text style={[styles.label, active && styles.labelActive]}>
+                                {item.label}
+                            </Text>
+                        </TouchableOpacity>
+                    );
+                })}
+            </BlurView>
         </View>
     );
 };
 
-const createStyles = (theme: any) => StyleSheet.create({
-    footerContainer: {
-        height: 'auto',
-        maxHeight: '10%',
-        paddingVertical: theme.spacing.sm,
-        justifyContent: 'space-evenly',
-        paddingHorizontal: theme.spacing.sm,
-        backgroundColor: theme.colors.background,
+const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
+    wrapper: {
+        // Floating pill — sits above content
+        position: 'absolute',
         bottom: 0,
-        right: 0,
         left: 0,
+        right: 0,
+        paddingBottom: Platform.OS === 'android' ? 8 : 0,
+    },
+    blurContainer: {
         flexDirection: 'row',
-        borderTopWidth: 1,
-        borderTopColor: theme.colors.border,
-        flex: 1,
+        alignItems: 'center',
+        marginHorizontal: 0,
+        paddingTop: 10,
+        paddingBottom: Platform.OS === 'android' ? 10 : 24,
+        overflow: 'hidden',
+        borderTopWidth: 0,
+        borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+    },
+    tintOverlay: {
+        ...StyleSheet.absoluteFill,
+        backgroundColor: isDark
+            ? 'rgba(10, 10, 10, 0.45)'
+            : 'rgba(255, 255, 255, 0.35)',
+    },
+    topBorder: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 1,
+        backgroundColor: isDark
+            ? 'rgba(255,255,255,0.12)'
+            : 'rgba(255,255,255,0.8)',
     },
     item: {
         flex: 1,
-        justifyContent: 'space-evenly',
         alignItems: 'center',
-        paddingVertical: theme.spacing.sm,
-        paddingHorizontal: theme.spacing.sm,
-        borderRadius: theme.radius.sm
-    },
-    activeItem: {
-        backgroundColor: theme.colors.inverted,
-    },
-    iconContainer: {
+        justifyContent: 'center',
+        gap: 4,
+        paddingVertical: 4,
         position: 'relative',
     },
-    label: {
-        color: theme.colors.textPrimary,
-        fontSize: theme.fontSize.sm,
-        marginTop: theme.spacing.xs,
+    iconWrap: {
+        width: 40,
+        height: 36,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    activeLabel: {
-        color: theme.colors.accent,
-        fontWeight: theme.fontWeight.bold,
-    }
+    iconWrapActive: {
+        backgroundColor: isDark
+            ? 'rgba(255,255,255,0.22)'
+            : 'rgba(0,0,0,0.17)',
+        borderRadius: 12,
+    },
+    label: {
+        fontSize: 10,
+        fontWeight: '500',
+        color: theme.colors.textPrimary,
+        letterSpacing: 0.2,
+    },
+    labelActive: {
+        color: theme.colors.textPrimary,
+        fontWeight: '700',
+    },
 });
 
 export default Footer;

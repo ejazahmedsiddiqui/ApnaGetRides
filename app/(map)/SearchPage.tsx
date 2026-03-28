@@ -15,6 +15,7 @@ import {useTheme} from "react-native-zustand-theme";
 import {ChevronLeft, LocateFixed} from "lucide-react-native";
 import {router} from "expo-router";
 import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
+import BottomSheetIdle from "@/components/BottomSheetIdle";
 
 // Default coordinates: Red Fort, New Delhi
 const RED_FORT_COORDS = {
@@ -61,7 +62,6 @@ const SearchPage = () => {
 
     // Throttle config — only commit a new userLocation to state when the user
     // has moved at least MIN_DISTANCE_METRES *or* MIN_INTERVAL_MS has elapsed.
-    // The Mapbox blue dot still animates smoothly because <UserLocation> handles
     // its own rendering; these thresholds only gate React state updates.
     const MIN_DISTANCE_METRES = 10;
     const MIN_INTERVAL_MS = 5000;
@@ -241,7 +241,6 @@ const SearchPage = () => {
                     visible={true}
                     animated={true}
                     androidRenderMode="gps"
-                    // FIX: use the stable callback so it doesn't get dropped
                     onUpdate={handleLocationUpdate}
                 />
             </MapView>
@@ -300,7 +299,7 @@ const SearchPage = () => {
                 handleStyle={{backgroundColor: theme.colors.surface}}
             >
                 <BottomSheetView style={styles.bottomSheet}>
-                    <Text style={{color: theme.colors.textPrimary}}>This is a bottom Sheet</Text>
+                    <BottomSheetIdle />
                 </BottomSheetView>
             </BottomSheet>
         </SafeAreaView>
