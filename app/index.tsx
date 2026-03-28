@@ -63,9 +63,7 @@ export default function Index() {
                         <Text style={styles.greeting}>Good morning 👋</Text>
                         <Text style={styles.headerTitle}>Where to?</Text>
                     </View>
-                    <TouchableOpacity onPress={toggleMode} style={styles.avatarButton}>
-                        <Text style={styles.avatarText}>{isDark ? '☀️' : '🌙'}</Text>
-                    </TouchableOpacity>
+
                 </View>
                 {/* ── Search Bar ── */}
                 <TouchableOpacity
@@ -87,6 +85,9 @@ export default function Index() {
                             <Text style={styles.quickChipLabel}>{dest.label}</Text>
                         </TouchableOpacity>
                     ))}
+                    <TouchableOpacity onPress={toggleMode} style={styles.avatarButton}>
+                        <Text style={styles.avatarText}>{isDark ? '☀️' : '🌙'}</Text>
+                    </TouchableOpacity>
                 </View>
 
                 {/* ── Services Grid ── */}

@@ -1,5 +1,5 @@
-import {StyleSheet, Text, View, TextInput, Animated, TouchableOpacity} from 'react-native';
-import React, {useRef, useEffect, useState} from 'react';
+import {StyleSheet, Text, View, TextInput, TouchableOpacity} from 'react-native';
+import React, { useState} from 'react';
 import {MaterialCommunityIcons} from "@expo/vector-icons";
 
 type InputType = 'default' | 'numeric' | 'alphabetic' | 'alphanumeric' | 'pincode' | 'phone' | 'aadhaar';
@@ -26,6 +26,7 @@ interface RenderFormFieldProps {
     icon?: React.ReactElement<{ color?: string }> | null;
     maxLength?: number | null;
     inputType?: InputType;
+    onFocusFn?: () => void
 }
 
 const RenderFormField = ({
@@ -50,25 +51,13 @@ const RenderFormField = ({
                              icon = null,
                              maxLength = null,
                              inputType = 'default',
+                             onFocusFn = () => null,
                          }: RenderFormFieldProps) => {
     const [isFocused, setIsFocused] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const focusAnim = useRef(new Animated.Value(0)).current;
+
 
     const togglePasswordVisibility = () => setShowPassword(!showPassword);
-
-    useEffect(() => {
-        Animated.timing(focusAnim, {
-            toValue: isFocused ? 1 : 0,
-            duration: 200,
-            useNativeDriver: false,
-        }).start();
-    }, [focusAnim, isFocused]);
-
-    const borderColor = focusAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [borderColorInactive, borderColorActive],
-    });
 
     const activeLabelColor = isFocused || value ? labelColorActive : labelColor;
 
@@ -139,7 +128,7 @@ const RenderFormField = ({
                 {children ? (
                     children
                 ) : (
-                    <Animated.View style={[styles.inputField, {borderColor}, error && styles.inputFieldError]}>
+                    <View style={[styles.inputField, error && styles.inputFieldError]}>
                         {icon && (
                             <View style={styles.iconContainer}>
                                 {iconWithColor}
@@ -160,7 +149,10 @@ const RenderFormField = ({
                             autoCapitalize={autoCapitalize}
                             editable={editable}
                             secureTextEntry={secureTextEntry && !showPassword}
-                            onFocus={() => setIsFocused(true)}
+                            onFocus={() => {
+                                setIsFocused(true)
+                                onFocusFn()
+                            }}
                             onBlur={() => setIsFocused(false)}
                             maxLength={maxLength ?? undefined}
                         />
@@ -173,7 +165,7 @@ const RenderFormField = ({
                                 />
                             </TouchableOpacity>
                         )}
-                    </Animated.View>
+                    </View>
                 )}
                 {error ? (
                     <Text style={styles.errorText}>{error}</Text>

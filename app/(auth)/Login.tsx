@@ -97,7 +97,7 @@ const Login = () => {
     }));
 
     useEffect(() => {
-        let interval: number = 0;
+        let interval: any = 0;
         if (resendTimer > 0) {
             interval = setInterval(() => setResendTimer((p) => p - 1), 1000);
         }
@@ -145,7 +145,6 @@ const Login = () => {
 
     const isGetOtpDisabled = phoneNumber.length !== 10 || loading;
     const isLoginDisabled = otp.length !== 4 || loading;
-    const isDisabled = step === 0 ? isGetOtpDisabled : isLoginDisabled;
 
     return (
         <>

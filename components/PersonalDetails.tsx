@@ -55,8 +55,8 @@ const PersonalDetails = ({activeTab, onTabChange}: ProfileHeaderProps) => {
     }, [isAuthenticated]);
 
     const swipeGesture = Gesture.Pan()
-        .activeOffsetX([-20, 20])      // ← Only activate after 20px horizontal movement
-        .failOffsetY([-10, 10])        // ← Fail/cancel if vertical movement detected first
+        .activeOffsetX([-20, 20])
+        .failOffsetY([-10, 10])
         .onEnd((event) => {
             if (event.translationX < -50 && activeTab === 'details') {
                 scheduleOnRN(onTabChange, 'security');
@@ -90,18 +90,13 @@ const PersonalDetails = ({activeTab, onTabChange}: ProfileHeaderProps) => {
                         style={styles.scroll}
                         showsVerticalScrollIndicator={false}
                     >
-                        {/* Avatar section */}
                         <View style={styles.avatarSection}>
                             <View style={styles.avatarWrapper}>
                                 <Image
                                     source={{uri: profileImage || 'https://img.freepik.com/free-vector/user-circles-set_78370-4704.jpg?ga=GA1.1.1874108308.1765959492&semt=ais_hybrid&w=740&q=80'}}
                                     style={styles.avatar}/>
-                                <TouchableOpacity style={styles.avatarBadge} activeOpacity={0.7}>
-                                    <Pen size={20} color={theme.colors.textPrimary} style={{
-                                        transform: [
-                                            {rotate: '270deg'}
-                                        ]
-                                    }}/>
+                                <TouchableOpacity style={styles.avatarBadge} activeOpacity={0.7} onPress={() => router.push('/ProfileEdit')}>
+                                    <Pen size={20} color={theme.colors.textSecondary} />
                                 </TouchableOpacity>
                             </View>
                             <Text style={styles.avatarName}>{fullName}</Text>

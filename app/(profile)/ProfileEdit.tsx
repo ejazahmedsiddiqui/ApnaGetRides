@@ -203,7 +203,6 @@ const ProfileEdit = () => {
                                 <Pen
                                     size={16}
                                     color={theme.colors.textPrimary}
-                                    style={{transform: [{rotate: "270deg"}]}}
                                 />
                             </TouchableOpacity>
                         </View>
