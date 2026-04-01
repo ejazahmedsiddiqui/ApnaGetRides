@@ -3,10 +3,7 @@ import {
     Text,
     View,
     StyleSheet,
-    TextInput,
-    FlatList,
     TouchableOpacity,
-    ActivityIndicator,
     Alert, Platform, PermissionsAndroid, AppState, AppStateStatus,
 } from "react-native";
 import Mapbox, {Camera, MapView, UserLocation, UserTrackingMode} from '@rnmapbox/maps';
@@ -49,14 +46,9 @@ const SearchPage = () => {
     const {theme} = useTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
 
-    const [query, setQuery] = useState("");
-    const [results, setResults] = useState<any[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [selectedLocation, setSelectedLocation] = useState<any>(null);
-    const [isFollowing, setIsFollowing] = useState<boolean>(false); // FIX: start false so default camera coords apply first
+    const [isFollowing, setIsFollowing] = useState<boolean>(false);
     const [userLocation, setUserLocation] = useState<Mapbox.Location | undefined>(undefined);
-    const [gpsAvailable, setGpsAvailable] = useState<boolean>(false); // tracks whether we've ever received a GPS fix
-
+    const [gpsAvailable, setGpsAvailable] = useState<boolean>(false);
     const cameraRef = useRef<Mapbox.Camera>(null)
     const bottomSheetRef = useRef<BottomSheet>(null);
 
@@ -136,17 +128,6 @@ const SearchPage = () => {
         }
     }, [gpsAvailable]);
 
-    // GPS watchdog — two complementary strategies to detect GPS going off:
-    //
-    // 1. AppState listener: fires immediately when the user returns from the
-    //    Settings app after toggling location. On resume we check whether
-    //    lastCommittedTime is stale (> GPS_TIMEOUT_MS ago). If it is, GPS is off.
-    //
-    // 2. Interval fallback: catches the case where GPS stops silently mid-session
-    //    (e.g. the user disables location without leaving the app on some Android ROMs).
-    //
-    // We do NOT reset lastCommittedLocation here — recenterMap still works with
-    // the last known position, we just hide/disable the button until GPS is back.
     const GPS_TIMEOUT_MS = 15000; // if no update in 15s, consider GPS off
 
     useEffect(() => {
@@ -175,38 +156,8 @@ const SearchPage = () => {
     }, [gpsAvailable]);
 
     // Debounce search
-    useEffect(() => {
-        const delay = setTimeout(() => {
-            if (query.length > 2) {
-                searchPlaces(query);
-            } else {
-                setResults([]);
-            }
-        }, 400);
 
-        return () => clearTimeout(delay);
-    }, [query]);
 
-    const searchPlaces = async (text: string) => {
-        try {
-            setLoading(true);
-            const response = await fetch(
-                `https://api.mapbox.com/geocoding/v5/mapbox.places/${text}.json?access_token=${mapboxToken}&limit=5`
-            );
-            const data = await response.json();
-            setResults(data.features || []);
-        } catch (err) {
-            console.log(err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleSelect = (item: any) => {
-        setSelectedLocation(item);
-        setResults([]);
-        setQuery(item.place_name);
-    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -239,7 +190,7 @@ const SearchPage = () => {
 
                 <UserLocation
                     visible={true}
-                    animated={true}
+                    animated={false}
                     androidRenderMode="gps"
                     onUpdate={handleLocationUpdate}
                 />
@@ -252,25 +203,6 @@ const SearchPage = () => {
                 </View>
             )}
 
-            {/* RESULTS LIST */}
-            {results.length > 0 && (
-                <View style={styles.resultsContainer}>
-                    <FlatList
-                        data={results}
-                        keyExtractor={(item) => item.id}
-                        renderItem={({item}) => (
-                            <TouchableOpacity
-                                style={styles.resultItem}
-                                onPress={() => handleSelect(item)}
-                            >
-                                <Text style={styles.resultText}>
-                                    {item.place_name}
-                                </Text>
-                            </TouchableOpacity>
-                        )}
-                    />
-                </View>
-            )}
 
             {router.canGoBack() &&
                 <TouchableOpacity

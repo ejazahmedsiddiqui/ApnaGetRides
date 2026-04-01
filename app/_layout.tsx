@@ -6,14 +6,10 @@ import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import Footer from "@/components/Footer";
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {UserProvider, useUser} from "@/context/UserContext";
-import {useEffect, useRef} from "react";
+    import {useEffect, useRef} from "react";
 import * as SplashScreen from "expo-splash-screen";
 import {Inter_900Black, useFonts} from '@expo-google-fonts/inter'
 import {BlurTargetView} from "expo-blur";
-
-if (Platform.OS === 'android') {
-    UIManager.setLayoutAnimationEnabledExperimental?.(true);
-}
 
 const queryClient = new QueryClient();
 
