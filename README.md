@@ -92,19 +92,23 @@ The system is designed to handle:
 ## 📸 Screenshots
 
 
-| User App                     | Driver App                       |
-| ---------------------------- | -------------------------------- |
-| ![user](./screens/user1.png) | ![driver](./screens/driver1.png) |
-| ![map](./screens/map.png)    | ![ride](./screens/ride.png)      |
+| User App                     |
+| ---------------------------- |
+| <img width="1080" height="2400" alt="Home Page - AGR" src="https://github.com/user-attachments/assets/4b3bbdce-bcd6-4a0b-a244-676fb616a33c" /> |
+| <img width="1080" height="2400" alt="Profile Sceurity" src="https://github.com/user-attachments/assets/8b843d78-69e5-45d5-ad32-efd78aee9340" /> |
+| <img width="1080" height="2400" alt="Profile Details" src="https://github.com/user-attachments/assets/391eeaf7-0131-4154-8d7a-dee234238909" /> |
+| <img width="1080" height="2400" alt="Profile Edit" src="https://github.com/user-attachments/assets/770325c2-c4fc-467a-86a2-584b23f8f86a" /> |
+| <img width="1080" height="2400" alt="Map" src="https://github.com/user-attachments/assets/22fb003e-287f-419f-ac1d-501dc004be34" /> |
+| <img width="1080" height="2400" alt="Home Page 2" src="https://github.com/user-attachments/assets/9c2a89b5-d213-4777-856a-6f59dff12f5c" /> |
 
 ---
 
 ## 🎥 Demo
 
-> Add a short demo video (30–60 sec)
+> [short demo video (240 sec)](https://www.youtube.com/shorts/57do9x6II84)
 
 ```
-https://your-demo-link.com
+https://www.youtube.com/shorts/57do9x6II84
 ```
 
 ---
@@ -114,12 +118,12 @@ https://your-demo-link.com
 ```
 src/
  ├── components/
- ├── screens/
- ├── services/        # API & WebSocket logic
+ ├── app/
+ ├── api/        # API & WebSocket logic
  ├── store/           # Zustand state
  ├── hooks/
  ├── utils/
- └── navigation/
+ └── context/
 ```
 
 ---
@@ -187,6 +191,6 @@ Contributions, ideas, and feedback are welcome.
 If you’re a recruiter or hiring manager, feel free to reach out:
 
 📧 [eahmed.official.2001@gmail.com](mailto:eahmed.official.2001@gmail.com)
-🔗 LinkedIn | GitHub
+🔗 [LinkedIn](https://www.linkedin.com/in/ejaz-ahmed-siddiqui-333514221/) | [GitHub](https://github.com/ejazahmedsiddiqui/)
 
 ---
